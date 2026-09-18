@@ -1,0 +1,4 @@
+model,relative_acid_sensitivity,threshold_gap_mean,thesis_ever_confirmed,note
+"A (core, public data)",0.17,1442.0,False,
+B (robustness range),,,False,"structural (fixed by SmelterParams.acid_yield, identical in all 10 combinations by construction -- NOT a robustness result): 0.17. Empirical (OLS-fit per combination on its own realized SM/acid_price series -- this IS the robustness check): range [3.2893, 3.4221]. 0% of combinations ever fully confirmed the thesis."
+C (industry benchmark; used: none -> same as A),0.17,1442.0,False,

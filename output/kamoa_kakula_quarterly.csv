@@ -1,0 +1,4 @@
+period,smelter_opex_usd_lb,acid_credit_usd_lb,acid_cushion_ratio,realized_acid_price_usd_t,contract_price_usd_t,implied_acid_yield,breakeven_acid_price,implied_buffer
+2026-Q1,0.27,0.32,1.1852,,725.0,,,
+2026-Q2,0.41,0.39,0.9512,465.0,840.0,0.0008387096774193549,488.8461538461538,-23.84615384615381
+2026-Q3,,,,,840.0,,,
