@@ -94,9 +94,38 @@ CU_TC_WEEKLY_RAW = [
      "(source article, citing the print one week before its own "
      "2026-09-04 headline figure)."),
     ("2026-09-04", -200.31, "cited",
-     "SMM Imported Copper Concentrate Index (weekly), -$200.31/dmt, the "
-     "most recent print as of this project's data-collection date "
+     "SMM Imported Copper Concentrate Index (weekly), -$200.31/dmt "
      "(source article's headline TC figure)."),
+    ("2026-09-11", -209.70, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$209.70/dmt -- "
+     "back-calculated from the 2026-09-18 print's own citation ('down "
+     "$12.19/dmt from -$209.7/dmt in the previous period'); "
+     "news.metal.com, 'Imported Copper Concentrate TCs Continue to Fall, "
+     "with Some Smelters Beginning to Show Willingness to Cut "
+     "Production' (SMM Copper Concentrate Spot Weekly Review, "
+     "2026-09-18). Added 2026-09-25."),
+    ("2026-09-18", -221.89, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$221.89/dmt, a "
+     "new record low (news.metal.com, same 2026-09-18 SMM Copper "
+     "Concentrate Spot Weekly Review as above). Added 2026-09-25."),
+    ("2026-09-24", -224.53, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$224.53/dmt, down "
+     "$2.64/dmt from -$221.89/dmt 'in the previous period' -- another new "
+     "record low (news.metal.com, 'CSPT Meeting Decides Not to Set Q4 "
+     "Copper Concentrate TC Guidance Price -- SMM Copper Concentrate "
+     "Spot Weekly Review', 2026-09-24). Dated as SMM reports it: "
+     "September 24, 2026 -- a Thursday, one day off the index's usual "
+     "Friday publication day, plausibly to clear the desk ahead of "
+     "China's Oct National Day holiday. This is the most recent print "
+     "as of this project's 2026-09-25 data-extension pass; charted on "
+     "the nearest Friday grid date (2026-09-25) for trend/stress-test "
+     "consistency with the rest of the series -- see "
+     "`_interpolate_to_grid()`'s docstring. The CSPT (China Smelters "
+     "Purchase Team, the group that normally sets Chinese smelters' "
+     "quarterly TC guidance) declining to set ANY Q4 guidance price at "
+     "all is itself new information: it signals the smelter side and "
+     "miners/traders could not agree on a floor, not that -$224.53 is "
+     "necessarily durable."),
 ]
 
 # ---------------------------------------------------------------------------
@@ -197,14 +226,61 @@ def _interpolate_to_grid(df: pd.DataFrame, value_col: str, freq="W-FRI") -> pd.D
     charting/stress-test convenience. Never used to overwrite a cited
     value -- cited dates are reindexed onto the nearest grid Friday only
     if they don't already land exactly on one; interpolation only fills
-    grid weeks that had no citation at all."""
-    full_index = pd.date_range(df.index.min(), df.index.max(), freq=freq)
+    grid weeks that had no citation at all.
+
+    BUG FIX (found 2026-09-25, while adding the 2026-09-24 TC/acid prints --
+    see README.md changelog): `full_index` used to be built as
+    `pd.date_range(df.index.min(), df.index.max(), freq=freq)`. Because
+    `date_range` with an anchored offset like "W-FRI" only ever lands ON
+    that offset's dates, this silently CAPPED the grid at the last on-cycle
+    Friday <= df.index.max() whenever the most recent cited point itself
+    fell on an off-cycle date -- e.g. SMM published its 2026-09-24 print on
+    a Thursday (a day early, plausibly to clear the desk before China's Oct
+    National Day holiday) instead of the usual Friday. df.index.max() was
+    then 2026-09-24, but the old `full_index` stopped at 2026-09-18: the
+    newest cited point never got its own grid row, `weekly.iloc[-1]` (used
+    throughout model_a.py / acid_cushion_monitor.py / model_b.py as "the
+    latest reading") would have silently reported a THREE-WEEK-STALE value
+    as current, and this directly contradicted README.md's own claim that
+    "the interpolation grid updates automatically once new cited anchors
+    are added." Fixed by rolling the grid's end up to the next on-cycle
+    date whenever df.index.max() isn't already on-cycle, so any cited
+    point -- on-cycle or not -- always gets a grid node. An off-cycle date
+    still gets ASSIGNED to the nearest on-cycle grid label (e.g. 2026-09-24
+    -> grid row 2026-09-25) via the existing nearest/3-day-tolerance
+    reindex below, exactly like every other "cited-approx" date in this
+    module already is -- but never silently dropped. The true reported
+    date always stays visible in the raw (non-interpolated) `note` field
+    and in `cu_tc_weekly()` / `cu_acid_weekly()`, which are untouched by
+    this grid-snapping."""
+    grid_end = pd.date_range(start=df.index.max(), periods=1, freq=freq)[0]
+    full_index = pd.date_range(df.index.min(), grid_end, freq=freq)
     combined_index = df.index.union(full_index).sort_values()
     out = df[[value_col]].reindex(combined_index)
     out[value_col] = out[value_col].interpolate(method="time")
     out["status"] = df["status"].reindex(combined_index)
     out["status"] = out["status"].fillna("interpolated (grid-fill)")
     return out.reindex(full_index, method="nearest", tolerance=pd.Timedelta("3D")).ffill()
+
+
+def _selfcheck_grid_never_drops_latest_point():
+    """Regression test for the bug fixed above: a cited point after the
+    last on-cycle grid date, and not itself on-cycle, must still appear as
+    the grid's own last row -- not be silently dropped."""
+    raw = [
+        ("2026-08-14", 100.0, "cited", "x"),
+        ("2026-08-28", 90.0, "cited", "x"),
+        ("2026-09-04", 80.0, "cited", "x"),
+        ("2026-09-24", 50.0, "cited", "x"),  # off-cycle Thursday, like the real Sep-24 TC/acid prints
+    ]
+    df = _weekly_frame(raw, "v")
+    grid = _interpolate_to_grid(df, "v")
+    assert grid.index.max() >= pd.Timestamp("2026-09-24"), (
+        f"grid dropped the latest cited point: last grid date is "
+        f"{grid.index.max()}, expected >= 2026-09-24")
+    assert grid["v"].iloc[-1] == 50.0, (
+        f"grid's last row does not carry the latest cited value: got "
+        f"{grid['v'].iloc[-1]}, expected 50.0")
 
 
 def cu_tc_weekly_interpolated() -> pd.DataFrame:
