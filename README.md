@@ -14,12 +14,173 @@ python acid_cushion_monitor.py
 ```
 This is the project's PRIMARY output now (see the changelog below for
 why): the "Copper Acid Cushion Monitor," built entirely from real, cited
-weekly SMM data through this project's data-collection date
-(2026-09-16), no synthetic fixture involved.
+weekly SMM data through **2026-09-24** (updated 2026-09-25 — see that
+changelog entry below for what moved), no synthetic fixture involved.
 
 This is **not** a systematic trading strategy. There is no backtest,
 Sharpe ratio, or walk-forward evaluation anywhere in this project, on
 purpose — see `STRATEGY_NOTE.md`'s "What this is and isn't."
+
+## Data inventory
+
+Every input series this project actually uses, in one place — source,
+real cadence (not the model's cadence; several run weekly even though
+`cu_price`/`silver_price` are daily), and the latest observation as of
+the 2026-09-25 update:
+
+| Series | Source | Cadence | Latest obs. | Status |
+|---|---|---|---|---|
+| Copper TC (Imported Copper Concentrate Index) | SMM | weekly (Fri) | 2026-09-24 | OBSERVED (cited) |
+| China copper-smelter sulphuric acid index | SMM | weekly (Fri) | 2026-09-24 | OBSERVED (cited) |
+| `cu_price`, `silver_price` | yfinance (COMEX/spot) | daily | 2026-09-18 | OBSERVED, then forward-filled onto the weekly grid for 2026-09-25 (5 trading days stale at that point — disclosed, not hidden) |
+| SMM EXW DRC / EXW Zambia regional acid benchmark | SMM | weekly (launched 2026-06-05) | 2026-09-04 | OBSERVED, but reported "unchanged for 5 weeks" — genuinely stale or genuinely flat, undetermined (see caveat in `copper_acid_data.REGIONAL_ACID_BENCHMARK`) |
+| `zn_price` (FRED PZINCUSDM) | FRED (IMF-sourced) | monthly | 2026-07 | OBSERVED; 2026-Q3 quarterly average is a single month, not a full quarter |
+| Kamoa-Kakula quarterly disclosure | Ivanhoe Mines filings | quarterly | 2026-Q2 (Jul 30 release) | OBSERVED; Q3 not yet reported (typical lag: late Oct/Nov) |
+| CRU smelter income-mix | CRU (cited in source article) | ad hoc / annual snapshot | 2025 full-year | OBSERVED, but built against TCs nowhere near as negative as today's — see caveat in `copper_acid_data.CRU_SMELTER_INCOME_MIX` |
+| China H2SO4 export volumes | China Customs (via SMM) | monthly | 2026-07 | OBSERVED |
+| PMI (NBS / RatingDog) | NBS, RatingDog | monthly | Aug 2026 | OBSERVED; Sept prints not yet released as of this update |
+| Freeport by-product filing data | Freeport-McMoRan 10-K | annual | FY2025 | OBSERVED |
+| Nexa by-product filing data | *(placeholder)* | — | — | **UNVERIFIED — see `smelter_calibration.load_calibrated_params()`'s docstring; not used in any headline output** |
+
+Anything not in this table (freight, handling, storage, VAT treatment on
+the SMM acid index, or a specific smelter's actual realized contract
+terms as opposed to the SMM benchmark index) is a genuine gap this
+project does not fabricate a number for — see "Known limitations" below.
+
+## Changelog — 2026-09-25: data refresh, and two real bugs found
+
+A second review pass (prompted by a set of external code-review notes,
+independently cross-checked against fresh reporting rather than taken on
+faith — see `STRATEGY_NOTE.md`'s changelog for which of that feedback was
+adopted and which was declined, and why) found and fixed the following.
+
+**Two genuine code bugs, not just stale numbers:**
+
+1. **`copper_acid_data._interpolate_to_grid()` silently dropped the
+   newest cited data point whenever it fell on an off-cycle date.**
+   `pd.date_range(df.index.min(), df.index.max(), freq="W-FRI")` only
+   ever lands on Fridays — so when SMM published its 2026-09-24 print on
+   a Thursday (a day early, plausibly to clear the desk before China's
+   Oct National Day holiday), the grid silently capped itself at
+   2026-09-18 and never surfaced the new point at all. This directly
+   contradicted this README's own prior claim that "the interpolation
+   grid updates automatically once new cited anchors are added" (see
+   "Using it with real data" below — that claim is only true as of this
+   fix). Fixed by rolling the grid's end up to the next on-cycle date
+   whenever the last cited point isn't itself on-cycle. Regression-tested
+   in `copper_acid_data.py`'s own `if __name__ == "__main__"` block
+   (`python copper_acid_data.py`).
+2. **`model_b.run_model_b_acid_robustness()`'s acid-price-source
+   comparison silently mixed data vintages once the domestic TC/acid
+   series moved past the regional (DRC/Zambia) benchmark's own latest
+   date.** It read `weekly.iloc[-1]` for the China-domestic side of a
+   3-way source comparison whose OTHER two legs (DRC, Zambia) are frozen
+   at the regional benchmark's last real print (2026-09-04) — harmless
+   while both series happened to share the same latest date, silently
+   wrong the moment they didn't (exactly what extending the domestic
+   series to 2026-09-24 did). Fixed to pin the China-domestic snapshot to
+   the SAME date as the regional benchmark's own latest print, and to
+   report both dates explicitly in the output (`acid_price_source_
+   reference_date` / `domestic_series_latest_date`) rather than silently
+   picking one. `acid_cushion_monitor.py`'s "Regional acid" and "Acid
+   price source" lines now print both dates.
+
+**Data extended with three new real, cited weekly prints (2026-09-11,
+09-18, 09-24 — full citations in `copper_acid_data.py`):** TC fell to two
+new record lows (-$221.89/dmt, then -$224.53/dmt); the acid index fell
+for a 12th consecutive week to RMB 1,247.5/t. **This materially moves the
+headline read** — the acid cushion ratio fell from 94.3% (2026-09-04) to
+68.2% (2026-09-24) in three weeks, a much faster deterioration than the
+2026-09-04 snapshot alone suggested. Also added: two new physical-response
+citations (SMM reporting "production cut intentions emerging" among
+smelters, 2026-09-18; CSPT declining to set ANY Q4 TC guidance price,
+2026-09-24) — see `copper_acid_data.PHYSICAL_RESPONSE_EVIDENCE`, dashboard
+state left at EMERGING (the CONFIRMED bar — a named smelter explicitly
+attributing a cut to the acid mechanism — still hasn't been cleared, but
+the evidence is materially stronger than three weeks ago). And a
+clarification of the source article's "August 31 fertiliser deadline"
+watch variable, which conflates a routine annual phosphate-fertiliser
+export window with the actual sulphuric-acid export halt (a separate,
+longer-dated restriction) — see `copper_acid_data.SULPHUR_TRADE_CONTEXT
+["acid_export_halt_vs_fertiliser_export_window"]`.
+
+**Two methodological/integrity fixes, not new findings:**
+
+3. **The "cushion ratio" label was used for two methodologically
+   different numbers without saying so.** The benchmark model's ratio is
+   Acid Credit ÷ \|TC\|; Kamoa-Kakula's own disclosed ratio (it has no TC
+   line to divide by) is Acid Credit ÷ TOTAL SMELTER OPEX — a different,
+   broader denominator. Both narrow (both readings say "the cushion is
+   shrinking"), but they are not the same measurement and were not
+   labelled as different ones. `acid_cushion_monitor.py`'s Kamoa line now
+   reads "acid/OPEX coverage" with an inline note; the benchmark model's
+   reads "acid/\|TC\|" throughout.
+4. **`data/nexa_zinc_byproducts.csv` flagged as unverified, not real
+   filing data.** Both years in that CSV set `sulfuric_acid_production_kt`
+   exactly equal to `concentrate_processed_kt`, forcing `acid_yield =
+   1.000` — identical to the independently-sourced AusIMM rule-of-thumb
+   already used for `DEFAULT_ZN_PARAMS.acid_yield` elsewhere. Two
+   independently-derived numbers landing on the exact same round figure
+   is the signature of a filler fixture, not confirmation. It was never
+   used in any headline output (`model_c.py` only reads the Freeport/
+   copper half of `load_calibrated_params()`'s return value), so nothing
+   downstream changes — but the file itself is now flagged in that
+   function's docstring, with a runtime warning if it's ever used for
+   zinc before being replaced with real Nexa 20-F/6-K figures.
+
+**`STRATEGY_NOTE.md`'s stale zinc/copper acid-vs-TC share-of-margin
+figures, fixed:** the "-44%/-15%, +41%/+14%" acid-vs-TC share-of-
+total-margin-change figures in Part Two were computed under the OLD
+invented `zn_price`/flat FX rate and, unlike the dollar figures right
+next to them, were never explicitly flagged as needing a re-run. Re-run
+on real data (`python real_data_check.py`) gives materially different
+numbers: -25.4%/-7.2% (TC), +24.6%/+7.1% (acid). Corrected in place —
+see `STRATEGY_NOTE.md`'s own changelog for the full before/after.
+
+**Housekeeping:** added `.gitignore` (`__pycache__/` was being shipped in
+the zip); removed the unused `pytest` dependency from `requirements.txt`
+(the project validates itself via runnable `if __name__ == "__main__"`
+self-checks, not a test suite — `requirements.txt` claiming a test
+framework it doesn't use was its own small inaccuracy); fixed this
+README's claim that `metal_prices.csv`/`fetch_metal_prices_yfinance.py`
+were "current through 2026-09-16" — the file actually already had real
+data through 2026-09-18, one line above where the doc claimed it stopped.
+
+**What was deliberately NOT done, and why:** a set of external review
+notes on this pass also proposed (a) a binary margin<0-triggers-shutdown
+curtailment rule, (b) netting a virgin-sulfur feedstock cost against the
+copper smelter's acid credit, and (c) an arbitrary numeric "confidence
+weight" penalty for the flat DRC/Zambia print, plus a much larger
+architecture change (machine-readable provenance objects for every
+number, a generic as-of/vintage data-access layer, gross/net/VAT-split
+acid pricing, a utilization-elasticity curtailment model, automated
+ingestion/CI/tests, a dashboard, alerts). (a) and (b) are declined
+outright: (a) contradicts this project's own documented reason for NOT
+mechanically linking margin sign to production (see "Known limitations"
+below — real Chinese smelters have run negative-TC for over a year
+without shutting down, which is the entire premise of the acid-cushion
+thesis), and (b) conflates two different cost structures — copper
+smelters produce acid as a by-product of the SO2 already captured from
+concentrate they're smelting anyway, at near-zero marginal feedstock
+cost, which is *why* the acid credit is such a powerful cushion; buying
+virgin sulfur as feedstock is a DIFFERENT business (standalone acid/
+fertiliser plants) whose cost the source article's own "margin
+compression for acid producers" line is actually about. (c) is declined
+in its literal numeric form (an unsourced "-80% weight" is exactly the
+false precision this project avoids elsewhere) but its underlying
+concern — don't read "unchanged for 5 weeks" as confirmed stability — was
+already handled in prose and still is. The larger architecture proposals
+are, individually, not unreasonable engineering ideas, but disproportionate
+to what this project actually is: a strategist's research/monitoring
+note, not a production trading-desk data platform. Building them would
+mean fabricating inputs this project has no public source for (freight,
+VAT, handling costs; utilization-elasticity coefficients; SMM's
+transaction-level liquidity data) — which is a worse outcome than
+leaving the gap explicitly disclosed, and is exactly the kind of
+false-precision this project has otherwise been careful to avoid. The
+two ACTUAL bugs that review correctly (re-)identified — the interpolation
+grid and the Model B vintage mismatch — are fixed above, on their own
+merits, not as part of adopting the larger proposal.
 
 ## Changelog — 2026-09-16: pivot to the copper acid-cushion thesis
 
@@ -59,27 +220,27 @@ now corroborating evidence, not the central test.
    Kamoa's that's per lb of payable copper, not per tonne of concentrate),
    and `treatment_margin()`/`free_metal_revenue()` — see point 4.
 3. **Models renamed by function, not just robustness-tier:**
-   - **Model A → "Acid Cushion."** `model_a.
+    - **Model A → "Acid Cushion."** `model_a.
      run_model_a_copper_acid_cushion()` is now the core analysis: real
-     weekly TC + acid data → `acid_cushion_ratio`, `residual_margin`,
-     `acid_stress_test`, trend figures. `run_model_a()` (zinc vs copper)
-     is kept, unchanged, as the secondary cross-metal check.
-   - **Model B → "Acid Price Robustness."** `model_b.
+      weekly TC + acid data → `acid_cushion_ratio`, `residual_margin`,
+      `acid_stress_test`, trend figures. `run_model_a()` (zinc vs copper)
+      is kept, unchanged, as the secondary cross-metal check.
+    - **Model B → "Acid Price Robustness."** `model_b.
      run_model_b_acid_robustness()` checks whether the reading survives a
-     different acid-price SOURCE (SMM China domestic vs SMM EXW DRC/
-     Zambia) or a different TC-index PROVIDER (SMM vs S&P Global Platts).
-     Real, but sparse — snapshot comparisons at the nearest dates an
-     alternative source has a print, not a second full time series (see
-     the function's docstring). It does NOT uniformly confirm the
-     thesis — see "What robustness actually found," below.
-   - **Model C → "Realized Acid Economics."** `model_c.
+      different acid-price SOURCE (SMM China domestic vs SMM EXW DRC/
+      Zambia) or a different TC-index PROVIDER (SMM vs S&P Global Platts).
+      Real, but sparse — snapshot comparisons at the nearest dates an
+      alternative source has a print, not a second full time series (see
+      the function's docstring). It does NOT uniformly confirm the
+      thesis — see "What robustness actually found," below.
+    - **Model C → "Realized Acid Economics."** `model_c.
      run_model_c_realized_acid_economics()` centers Kamoa-Kakula's own
-     Q1/Q2 2026 disclosed numbers (not Freeport, which is now a secondary
-     cross-check) — the article's own empirical anchor. Computes Kamoa's
-     own cushion-ratio narrowing (Q1 118.5% → Q2 95.1%, visible in its own
-     filings before the SMM index-level shrinkage) and tests "does
-     integration earn a pricing edge" against the DRC benchmark (it
-     doesn't, on this data point — a real $95/t discount).
+      Q1/Q2 2026 disclosed numbers (not Freeport, which is now a secondary
+      cross-check) — the article's own empirical anchor. Computes Kamoa's
+      own cushion-ratio narrowing (Q1 118.5% → Q2 95.1%, visible in its own
+      filings before the SMM index-level shrinkage) and tests "does
+      integration earn a pricing edge" against the DRC benchmark (it
+      doesn't, on this data point — a real $95/t discount).
 4. **A real modeling gap, found and fixed: `treatment_margin()`.** The
    original `smelter_margin()` folds in the smelter's FULL payable-metal
    revenue — correct for an INTEGRATED mine+smelter (Kamoa), but a huge
@@ -130,16 +291,25 @@ now corroborating evidence, not the central test.
    `acid_stress_test()` shock level, not just asserted in a docstring.
 
 **What robustness (Model B) actually found — reported straight, not
-smoothed over:** the ~94% cushion-ratio reading is specific to China's
-domestic acid market. At the SMM EXW DRC benchmark (~$935/t vs China's
-~$228/t as of 2026-09-04), the same TC would show a cushion ratio over
-380%; at the Zambia benchmark (~$400/t), over 160%. This does not
-undermine the thesis — the TC series and the domestic acid index describe
-the SAME population of Chinese smelters — but it means "the cushion is
-shrinking" is a claim about the Chinese domestic market specifically, not
-a universal acid-market statement, and the monitor's Cross-check section
-reports the DRC/Zambia comparison explicitly rather than only showing the
-number that confirms the headline. The TC-index-provider check (SMM vs
+smoothed over:** the domestic-vs-regional acid-price comparison is
+necessarily dated to the regional benchmark's own latest print
+(2026-09-04 — it hasn't moved since; see the data inventory above), which
+is now three weeks behind the domestic TC/acid series' own latest reading
+(2026-09-24). As of that shared 2026-09-04 snapshot, the ~94% cushion-
+ratio reading is specific to China's domestic acid market: at the SMM EXW
+DRC benchmark (~$935/t vs China's ~$228/t), the same TC would show a
+cushion ratio over 380%; at the Zambia benchmark (~$400/t), over 160%.
+This does not undermine the thesis — the TC series and the domestic acid
+index describe the SAME population of Chinese smelters — but it means
+"the cushion is shrinking" is a claim about the Chinese domestic market
+specifically, not a universal acid-market statement, and the monitor's
+Cross-check section reports the DRC/Zambia comparison explicitly, dated,
+rather than only showing the number that confirms the headline. (By
+2026-09-24, on the domestic series alone, the cushion ratio had fallen
+further still, to 68.2% — see `STRATEGY_NOTE.md` for the full current
+read; there is no fresher DRC/Zambia print to compare it against, which
+is exactly why the two dates are now reported separately rather than
+implied to be the same snapshot.) The TC-index-provider check (SMM vs
 Platts, $2.94/dmt apart in April) agrees closely — that part of the
 reading is NOT source-specific.
 
@@ -202,7 +372,10 @@ reading is NOT source-specific.
   — `copper_acid_data.py`'s real series IS its input.
 - **`fetch_metal_prices_yfinance.py`** — run **locally**, not in this
   sandbox. Copper and silver only (zinc via FRED instead — see
-  `data_loaders.py`). Currently fetched through 2026-09-16.
+  `data_loaders.py`). `data/metal_prices.csv` currently holds real daily
+  data through 2026-09-18 (this line previously said 2026-09-16, which
+  undersold what was actually already in the file by two trading days —
+  fixed 2026-09-25).
 - **`provenance.py`** — unchanged, generic quarter×field provenance-matrix
   builder; used conceptually by `real_data_check.py`'s printed table
   (not literally imported by it — that file builds its own provenance
@@ -215,7 +388,12 @@ re-run `fetch_metal_prices_yfinance.py` locally for `cu_price` (needed
 for the weekly reindex), and add new cited weeks to
 `copper_acid_data.py`'s `CU_TC_WEEKLY_RAW`/`CU_ACID_WEEKLY_RAW` as SMM
 publishes them — the interpolation grid updates automatically once new
-cited anchors are added.
+cited anchors are added, including an anchor that lands on an off-cycle
+(non-Friday) date, as the 2026-09-24 print did (this is now actually
+true; it was a real bug until the 2026-09-25 fix described in that
+changelog entry — run `python copper_acid_data.py` after adding a new
+anchor to confirm the grid picked it up before trusting downstream
+output).
 
 **Secondary (zinc-vs-copper cross-metal check):**
 1. Run `fetch_metal_prices_yfinance.py` locally for copper/silver, and
@@ -250,7 +428,26 @@ cited anchors are added.
   still requires a manually-downloaded file regardless of environment (TC
   and the China acid index specifically have no free API — every weekly
   point in `copper_acid_data.py` was transcribed from a named SMM/Platts
-  article, checked 2026-09-16).
+  article, checked 2026-09-16 and extended 2026-09-25).
+- **The TC and acid figures throughout are SMM's published BENCHMARK
+  index levels for a stylized, representative Chinese smelter — not any
+  specific real smelter's actual, contract-realized economics**, and the
+  model does not net out freight, handling, storage, or VAT treatment
+  between the SMM index and what a smelter actually books as revenue
+  (none of these have a public, citable figure for this specific market,
+  and this project does not fabricate one). The ONE place real,
+  company-disclosed realized economics exist is Kamoa-Kakula
+  (`KAMOA_KAKULA_QUARTERLY`), which is why it's kept as its own separate
+  comparison rather than folded into the benchmark-model numbers — see
+  the next point.
+- **The benchmark model's "cushion ratio" (Acid Credit ÷ \|TC\|) and
+  Kamoa-Kakula's own disclosed ratio (Acid Credit ÷ TOTAL SMELTER OPEX,
+  since its disclosure has no TC line) are methodologically different
+  measurements that happened to share the same name until 2026-09-25** —
+  fixed in `acid_cushion_monitor.py`'s output labels (now "acid/\|TC\|"
+  vs "acid/OPEX coverage"), but worth restating here: don't treat the two
+  percentages as directly comparable numbers just because both narrow
+  over the same period.
 - **`copper_acid_data.py`'s weekly grid mixes provenance levels.** The
   `status` column on every row tells you which — `cited`, `cited-approx`
   or `interpolated` — but a naive reader of `cu_tc_weekly_interpolated()`
@@ -272,9 +469,9 @@ cited anchors are added.
   uncalibrated inputs** (`conversion_cost`, `premium`, the energy
   placeholder above) — the DIRECTION (deteriorating through 2026) and the
   SENSITIVITY to the acid channel (`acid_stress_test()`'s shock table) are
-  the load-bearing outputs; the exact "-$128/t" headline number should be
-  read as "this shape and sign are real, this precision is not," same as
-  every other dollar figure in this project.
+  the load-bearing outputs; the exact "-$186/t" headline number (as of
+  2026-09-24) should be read as "this shape and sign are real, this
+  precision is not," same as every other dollar figure in this project.
 - **Kamoa-Kakula's Q1 2026 `implied_acid_yield_and_buffer()` is
   intentionally left NaN** — Ivanhoe's Q1 release disclosed a new
   CONTRACT acid price (~$725/t), not a realized weighted-average price;

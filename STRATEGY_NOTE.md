@@ -36,12 +36,14 @@ corroborating evidence now, not the central test — see "Cross-check:
 zinc," below.
 
 **This note is restructured accordingly.** Part One is the new primary
-analysis: the copper acid-cushion thesis, on real data through this
-project's 2026-09-16 data-collection date. Part Two is the original
-zinc-vs-copper note, preserved as-is (including its own 2026-09-15
-correction note) — still useful secondary evidence, and an honest record
-of how this project's thinking evolved, not deleted just because the
-emphasis moved.
+analysis: the copper acid-cushion thesis, on real data through
+2026-09-24 (extended 2026-09-25 from the original 2026-09-04/09-16
+pass — see Part One's own changelog at the end for what that extension
+changed and two real code bugs it exposed and fixed). Part Two is the
+original zinc-vs-copper note, preserved as-is (including its own
+2026-09-15 correction note, now itself updated 2026-09-25 — see below) —
+still useful secondary evidence, and an honest record of how this
+project's thinking evolved, not deleted just because the emphasis moved.
 
 ---
 
@@ -74,69 +76,79 @@ this project's models now answer directly is: **how much of the negative
 TC is currently being absorbed by acid revenue, and what happens if that
 cushion keeps eroding while TC stays near its floor?**
 
-## The current read (as of 2026-09-04, data collected 2026-09-16)
+## The current read (as of 2026-09-24, data extended through 2026-09-25)
 
 Run `python acid_cushion_monitor.py` for the live version of this table;
 the figures below are what that script prints on this project's real,
-cited weekly data.
+cited weekly data. **Updated 2026-09-25** with three new real weekly
+prints (2026-09-11, 09-18, 09-24) that were not yet available at the
+2026-09-04/16 pass — the numbers below replace that snapshot; see this
+note's own changelog at the bottom for the before/after and for the two
+code bugs that extending the data exposed and fixed.
 
-| Metric | Value |
-|---|---|
-| TC (SMM Imported Copper Concentrate Index, weekly) | **-$200.31/dmt** |
-| Acid credit (treatment basis, `DEFAULT_CU_PARAMS.acid_yield` × acid price) | **+$189/t concentrate** |
-| **Acid Cushion Ratio** (acid credit ÷ \|TC\|) | **94.3%** |
-| Margin ex-acid (treatment basis) | **-$317/t concentrate** |
-| Total treatment margin | **-$128/t concentrate** |
+| Metric | Value (2026-09-24) | Value (2026-09-04, for comparison) |
+|---|---|---|
+| TC (SMM Imported Copper Concentrate Index, weekly) | **-$224.53/dmt** | -$200.31/dmt |
+| Acid credit (treatment basis, `DEFAULT_CU_PARAMS.acid_yield` × acid price) | **+$153/t concentrate** | +$189/t concentrate |
+| **Acid Cushion Ratio** (acid credit ÷ \|TC\|) | **68.2%** | 94.3% |
+| Margin ex-acid (treatment basis) | **-$339/t concentrate** | -$317/t concentrate |
+| Total treatment margin | **-$186/t concentrate** | -$128/t concentrate |
 
-Two things worth being direct about in that table. First, **acid is still
-covering most, but no longer all, of the TC drag** — 94.3% is a real
-number, not a rounding artefact, and it is the most direct possible
-answer to the source article's central question. Second, **the model's
-own treatment-margin read is negative even WITH the acid credit** at
-this project's default (still partly uncalibrated — see "Known
-limitations" below) cost assumptions: margin ex-acid is deeply negative
-(-$317/t) and acid isn't quite big enough to pull the total back to
-zero. Read the *direction and relative sensitivity* here as the
-load-bearing finding, not the exact "-$128/t" — `conversion_cost`,
+Two things worth being direct about in that table. First, **acid is now
+covering roughly two-thirds of the TC drag, down from essentially all of
+it seven weeks earlier** — 68.2% is a real number, not a rounding
+artefact, and the 26-point drop in three weeks is a materially faster
+deterioration than the 2026-09-04 snapshot on its own implied. Second,
+**the model's own treatment-margin read is negative even WITH the acid
+credit**, and has gotten MORE negative — margin ex-acid is deeply
+negative (-$339/t) and acid isn't close to big enough to pull the total
+back to zero (total margin -$186/t, worse than -$128/t three weeks
+earlier). Read the *direction and relative sensitivity* here as the
+load-bearing finding, not the exact dollar figures — `conversion_cost`,
 `premium` and the energy-price placeholder behind that number are still
 rule-of-thumb, the same honest caveat this project has carried since its
-first version (see `model_a.py`'s calibration comment).
+first version (see `model_a.py`'s calibration comment) — but the
+DIRECTION of this specific move (cushion narrowing fast, margin widening
+its deficit) is the single most-changed fact in this update.
 
-**Trend, not just level:**
+**Trend, not just level (as of 2026-09-24):**
 
-- Acid price: **-9.6% over 1 month, -11.8% over 9 weeks, -7.4% over 3
-  months** (the 9-week figure being the largest of the three is itself
-  informative — the decline has been concentrated in the most recent
-  stretch, consistent with SMM's own "ninth consecutive weekly decline"
-  framing).
-- TC: **-$30.82/dmt over 1 month, -$68.84/dmt over 9 weeks** (reported as
+- Acid price: **-21.2% over 1 month, -25.8% over 3 months, -28.4% over 9
+  weeks** (all three legs accelerated sharply from the 2026-09-04 read of
+  -9.6%/-7.4%/-11.8% — this is no longer a "concentrated in the most
+  recent stretch" story, it's a broad acceleration across every window).
+- TC: **-$24.69/dmt over 1 month, -$72.13/dmt over 9 weeks** (reported as
   a level change, not a %, because TC is negative throughout this series
   and a "% change of a negative number" reads backwards — see
   `model_a.py`'s `trend` dict).
-- **Acid Cushion Ratio: -68.6 percentage points over 9 weeks, -85.3pp
-  over 13 weeks.** This is the single sharpest number in this note. It is
-  bigger than acid's own -11.8% move over the same window because TC
+- **Acid Cushion Ratio: -72.2 percentage points over 9 weeks, -97.5pp
+  over 13 weeks.** Still the single sharpest number in this note, and
+  sharper than it was three weeks ago (-68.6pp / -85.3pp then). It is
+  bigger than acid's own -28.4% move over the same window because TC
   deteriorated even faster in relative terms — the cushion is shrinking
-  primarily because the thing it's cushioning got worse quickly, not only
-  because acid itself fell. Both legs matter; don't attribute this move
-  to acid alone.
+  because BOTH legs are now moving against the smelter, not because
+  acid alone fell. Don't attribute this move to acid alone.
 
 **Stress test (acid price shock, TC and copper price held at the latest
 snapshot):**
 
 | Acid shock | Total treatment margin | Cushion ratio |
 |---|---|---|
-| flat | -$128/t | 94.3% |
-| -10% | -$147/t | 84.9% |
-| -20% | -$165/t | 75.5% |
-| -30% | -$184/t | 66.0% |
+| flat | -$186/t | 68.2% |
+| -10% | -$201/t | 61.4% |
+| -20% | -$216/t | 54.6% |
+| -30% | -$232/t | 47.7% |
 
-A further 20-30% acid decline — not an extreme scenario given the acid
-index has already fallen roughly 14% from its early-July peak in nine
-weeks — would push the cushion ratio well below two-thirds, with TC
-unchanged. This is a stress test, not a forecast: it deliberately does
-not model TC and acid moving together, even though in practice they may
-(see "What would move this thesis," below).
+A further 20-30% acid decline is no longer a hypothetical tail scenario —
+the index has ALREADY fallen roughly 30% from its early-July peak
+(RMB 1,789/t → RMB 1,247.5/t) in eleven weeks, i.e. the stress test's
+"-30%" column and the base case are converging. On the current trajectory
+the cushion ratio is on a path toward the range this stress test used to
+treat as an extreme downside case, with TC unchanged (and TC has not been
+moving in the smelter's favor either). This is a stress test, not a
+forecast: it deliberately does not model TC and acid moving together,
+even though in practice they may (see "What would move this thesis,"
+below).
 
 ## The Thesis Dashboard
 
@@ -147,25 +159,29 @@ pass/fail would misrepresent that. See `thesis_dashboard.py`.
 
 | # | Category | State | Why |
 |---|---|---|---|
-| 1 | TC regime | **EXTREME** | -$200.31/dmt, the most negative print in this project's series; still deteriorating on a 9-week view (-$68.84/dmt), though the single latest weekly move (-$0.47/dmt) was small — SMM's own "resistance" language is visible in the deceleration, even though the level itself is unambiguous. |
-| 2 | Acid cushion | **SHRINKING** | 94.3%, down 68.6pp over 9 weeks. |
-| 3 | Treatment margin | **DETERIORATING** | -$128/t, down $83/t over 9 weeks (uncalibrated cost inputs — see above; direction is the reliable part). |
-| 4 | Physical response | **EMERGING**, not yet CONFIRMED | Real evidence on both sides — SMM's own note on TC-negotiation resistance, and a real, reported decline in Chinese copper cathode output in July 2026 — but no smelter statement found attributes a cut specifically to the acid cushion, as opposed to concentrate scarcity or the extreme TC alone. |
-| 5 | Acid-market regime | **UNCLEAR** | China's sulphuric-acid exports collapsed from ~116.7kt (May) to ~980t (June) and stayed near-zero into July — but domestic sulphur (the acid feedstock) itself rebounded ~7.8% w/w in early September even as acid kept falling, which is margin compression for acid PRODUCERS, not a clean read on either a pure export-policy or pure demand story. The source article calls this "the honest state of the evidence, not a gap to paper over," and this dashboard reports that conclusion rather than re-deriving a false precision from the same facts. |
-| 6 | Demand | **MIXED** | China's official NBS Manufacturing PMI (Aug 2026): 49.8 (contractionary). The RatingDog China General Manufacturing PMI, same month: 51.5 (expansionary). A 1.7-point gap is too wide for "Chinese demand is collapsing" to be a clean read. COMEX copper inventories hit a record 675,185t on H1 tariff-driven cathode imports — partly trade-flow positioning, not pure scarcity or surplus. |
-| 7 | Regional realization | **DISCOUNT** | Kamoa-Kakula's own Jul/Aug contract acid price (~$840/t) sits **below** the independent SMM EXW DRC benchmark (~$935/t as of 2026-09-04) — despite an integrated mine-gate structure that should, in principle, help. "Integration equals a pricing edge" is not supported by this data point. |
+| 1 | TC regime | **EXTREME** | -$224.53/dmt as of 2026-09-24, a NEW record low (also -$221.89/dmt on 09-18, itself a record when printed) — still deteriorating on a 9-week view (-$72.13/dmt) and on the latest single weekly move (-$2.64/dmt). CSPT (the group that normally sets Chinese smelters' quarterly TC guidance) declined to set ANY Q4 guidance price at its 2026-09-24 meeting — the negotiation itself is now breaking down, not just settling at a worse level. |
+| 2 | Acid cushion | **SHRINKING** | 68.2% as of 2026-09-24, down 72.2pp over 9 weeks — down from 94.3% just three weeks earlier (2026-09-04); the deterioration has accelerated, not slowed. |
+| 3 | Treatment margin | **DETERIORATING** | -$186/t as of 2026-09-24, down from -$128/t on 2026-09-04 (uncalibrated cost inputs — see above; direction is the reliable part). |
+| 4 | Physical response | **EMERGING, STRENGTHENING**, not yet CONFIRMED | As of 2026-09-04/16: SMM's note on TC-negotiation resistance, and a reported decline in Chinese copper cathode output in July 2026. Two more pieces added 2026-09-25: SMM's own language shifted from "resistance" to "production cut intentions emerging" among smelters (2026-09-18), and CSPT's Q4 guidance-setting process broke down entirely (2026-09-24, see row 1). Still no smelter statement found that attributes a cut specifically to the acid cushion, as opposed to concentrate scarcity or the extreme TC alone — the CONFIRMED bar has not been cleared, but the gap to it has narrowed materially in three weeks. |
+| 5 | Acid-market regime | **UNCLEAR** | China's sulphuric-acid exports collapsed from ~116.7kt (May) to ~980t (June) and stayed near-zero into July — but domestic sulphur (the acid feedstock) itself rebounded ~7.8% w/w in early September even as acid kept falling, which is margin compression for acid PRODUCERS, not a clean read on either a pure export-policy or pure demand story. Added 2026-09-25: the acid-specific export halt is reported (via a government decree cited in CRU's reporting) to run through end-2026 independent of the article's "August 31 fertiliser deadline," which was a different, routine, annual phosphate-fertiliser export-declaration window whose own resumption is, itself, reported inconsistently across sources as of this update (see "What would move this thesis," below) — net effect: leans slightly toward "policy-driven, sticky" on the acid-export side specifically, still UNCLEAR overall pending confirmation either way. |
+| 6 | Demand | **MIXED** | China's official NBS Manufacturing PMI (Aug 2026): 49.8 (contractionary). The RatingDog China General Manufacturing PMI, same month: 51.5 (expansionary). A 1.7-point gap is too wide for "Chinese demand is collapsing" to be a clean read. COMEX copper inventories hit a record 675,185t on H1 tariff-driven cathode imports — partly trade-flow positioning, not pure scarcity or surplus. September PMI prints not yet released as of this update. |
+| 7 | Regional realization | **DISCOUNT** | Kamoa-Kakula's own Jul/Aug contract acid price (~$840/t) sits **below** the independent SMM EXW DRC benchmark (~$935/t as of 2026-09-04, still the benchmark's own latest print — no fresher regional print found as of this update) — despite an integrated mine-gate structure that should, in principle, help. "Integration equals a pricing edge" is not supported by this data point. |
 
 **Current thesis status:**
-- **Observed:** TC extreme, acid cushion shrinking.
+- **Observed:** TC extreme and still worsening, acid cushion shrinking
+  faster than three weeks ago.
 - **Mechanism:** CONSISTENT (both legs of the article's central claim are
-  independently confirmed in this project's own data).
-- **Physical response:** EMERGING, not yet CONFIRMED.
-- **Cause of acid decline:** UNCLEAR.
+  independently confirmed in this project's own data, and both have
+  gotten more pronounced since the original 2026-09-04 read).
+- **Physical response:** EMERGING, STRENGTHENING, not yet CONFIRMED.
+- **Cause of acid decline:** UNCLEAR (though the export-halt timeline
+  clarification above leans it slightly toward policy-driven/sticky).
 - **Forward catalyst:** acid continues lower while TC remains near its
   floor — the gap between an acid-advantaged smelter and an exposed one
   widens on its own, without either variable needing to move again (the
   source article's own closing framing, and this project's models agree
-  with it independently).
+  with it independently — and, as of 2026-09-24, this is no longer just
+  a framing but an observed three-week trend).
 
 ## Case study: Kamoa-Kakula (Ivanhoe Mines)
 
@@ -178,9 +194,19 @@ UNIT-BASIS WARNING before comparing the two numerically).
 |---|---|---|
 | Smelter opex | $0.27/lb Cu | $0.41/lb Cu |
 | Acid credit | $0.32/lb Cu | $0.39/lb Cu |
-| **Acid cushion ratio** (credit ÷ opex) | **118.5%** | **95.1%** |
+| **Acid/OPEX coverage** (credit ÷ TOTAL SMELTER OPEX) | **118.5%** | **95.1%** |
 | Realized acid price | n/a (only a new-contract price disclosed) | $465/t |
 | Contract price (fwd) | ~$725/t | ~$840/t (Jul/Aug) |
+
+**On terminology (fixed 2026-09-25):** this row used to be labelled
+"acid cushion ratio" — the same name used elsewhere in this note for the
+benchmark model's Acid Credit ÷ \|TC\| figure (94.3%→68.2% above). They
+are NOT the same measurement: Kamoa's disclosure has no TC line to divide
+by, so its own ratio is Acid Credit ÷ TOTAL SMELTER OPEX, a broader,
+methodologically different denominator. Both point the same direction
+(narrowing), which is the genuinely useful read here — but they should
+never be read as two numbers on the same scale, and are labelled
+differently from here on to avoid exactly that.
 
 **Kamoa's own disclosed numbers already show the cushion narrowing —
 from acid MORE than covering smelter opex in Q1, to acid falling just
@@ -212,19 +238,32 @@ distinguishable from the data available here.
 selectively:
 
 **Does the reading depend on which acid market you look at?** Yes, and
-substantially. At the SMM China domestic index (this note's primary
-series), the cushion ratio is 94.3%. At the SMM EXW DRC benchmark
-(~$935/t), the same TC would imply a cushion ratio over **387%**. At the
-Zambia benchmark (~$400/t), over **166%**. **This does not undermine the
-thesis** — the TC series and the domestic acid index describe the SAME
-population of Chinese smelters, which is exactly the population the
-source article is about — but it means "the cushion is shrinking" is a
-claim about the Chinese domestic market specifically, and should be
-stated that way, not generalized to "acid is cheap everywhere." Kamoa's
-own numbers (a DRC-based, non-China-domestic operation) show the SAME
-directional narrowing (118.5% → 95.1%) from a much higher starting level
-— consistent with a real, if smaller and later-arriving, version of the
-same pressure outside China too.
+substantially — but this comparison is necessarily dated to the regional
+benchmark's own latest print, **2026-09-04**, which has not moved since
+and is now three weeks behind the domestic TC/acid series' own latest
+reading (2026-09-24); the two dates are reported separately in
+`model_b`'s output (`acid_price_source_reference_date` /
+`domestic_series_latest_date`) rather than silently treated as the same
+snapshot — this used to be a real bug (see this note's changelog at the
+end). As of that shared 2026-09-04 date: at the SMM China domestic index
+(this note's primary series), the cushion ratio is 94.3%. At the SMM EXW
+DRC benchmark (~$935/t), the same TC would imply a cushion ratio over
+**387%**. At the Zambia benchmark (~$400/t), over **166%**. **This does
+not undermine the thesis** — the TC series and the domestic acid index
+describe the SAME population of Chinese smelters, which is exactly the
+population the source article is about — but it means "the cushion is
+shrinking" is a claim about the Chinese domestic market specifically, and
+should be stated that way, not generalized to "acid is cheap everywhere."
+Kamoa's own numbers (a DRC-based, non-China-domestic operation) show the
+SAME directional narrowing (118.5% → 95.1%, on its own Acid/OPEX
+coverage basis — see the terminology note above) from a much higher
+starting level — consistent with a real, if smaller and later-arriving,
+version of the same pressure outside China too. There is no fresher
+DRC/Zambia print to re-run this specific comparison against as of
+2026-09-25; by 2026-09-24 the domestic-only cushion ratio had fallen to
+68.2% (see "The current read," above), which would presumably narrow
+this cross-market gap too if a fresh regional print existed — that is a
+plausible expectation, not a measured one.
 
 **Does the reading depend on which TC index provider you trust?** No, not
 materially. SMM's TC print and an independent S&P Global Platts CIF China
@@ -248,19 +287,44 @@ secondary, thread.
 
 ## What would move this thesis next (the article's own watch list)
 
-Three variables, carried through unchanged because they're the right
-ones: **the acid credit itself; China's fertiliser export policy after
-the August 31 deadline SMM is watching (the likely channel for whether
-the export collapse behind the domestic acid glut is policy-driven and
-sticky, or demand-driven and reversible once autumn restocking begins);
-and whether the DRC/Zambia benchmark spread holds once it has more than
-five weeks of data behind it** (see "Known limitations" — a flat 5-week
-print on a 9-week-old benchmark is exactly as consistent with a thin,
-untraded market as with genuine stability, and this project does not
-resolve that ambiguity in either direction). TC does not need to move
+Three variables, carried through largely unchanged because they're
+mostly still the right ones, with one clarified 2026-09-25: **the acid
+credit itself; China's fertiliser export policy after the August 31
+deadline SMM is watching; and whether the DRC/Zambia benchmark spread
+holds once it has more than five weeks of data behind it** (see "Known
+limitations" — a flat 5-week print on a 9-week-old benchmark is exactly
+as consistent with a thin, untraded market as with genuine stability, and
+this project does not resolve that ambiguity in either direction, and no
+fresher print has appeared as of this update). TC does not need to move
 again for this thesis to matter further: if it holds near its floor while
 the acid cushion keeps eroding, the gap between an acid-advantaged
-smelter and an exposed one widens on its own.
+smelter and an exposed one widens on its own — and, as of 2026-09-24,
+this is exactly what has happened.
+
+**Clarification on the middle variable, added 2026-09-25:** the article's
+"August 31 fertiliser deadline" and the acid-export collapse this project
+actually tracks (China's H2SO4 exports, 116.7kt in May → ~980t in June,
+staying near-zero into July) are two DIFFERENT Chinese export policies,
+and worth not conflating. The August 31 date belongs to a ROUTINE,
+ANNUAL phosphate-fertiliser (DAP/MAP) export-declaration control that
+China runs every year from March 14 to August 31 — not something invented
+for 2026. The sulphuric-ACID-specific export halt that actually drove the
+H2SO4 collapse in this project's data is, per CRU's reporting (citing the
+relevant government decree), in force from the start of May THROUGH THE
+END OF 2026 — independent of the routine fertiliser deadline entirely.
+On the narrower fertiliser question itself, evidence checked 2026-09-25
+is mixed: an SMM flash note says the routine window is "expected to be
+lifted" as usual from Sept 1; S&P Global Commodity Insights (2026-09-02)
+reports fertiliser producers had received no official guidance on DAP/MAP
+export resumption, with one trader thinking exports might not resume in
+2026 at all. Net read: the article's third watch variable has not cleanly
+resolved, but it was likely never the right lever on the acid glut
+specifically — the acid halt runs on its own, longer, already-fixed
+timeline regardless of what happens with fertiliser exports. That leans
+the "cause of acid decline" dashboard category slightly toward
+policy-driven/sticky, though it stays UNCLEAR overall (see the dashboard
+table above) since this doesn't resolve the domestic-demand side of the
+question at all.
 
 ## A real modeling gap, found and fixed while building this
 
@@ -298,19 +362,22 @@ proving the margin-ex-acid / acid-contribution split is exact.
   $70/MWh-equivalent energy-price placeholder — no free public series for
   Chinese industrial electricity was found). The direction (deteriorating
   through 2026) and the sensitivity to the acid channel (the stress-test
-  table above) are the load-bearing outputs; treat "-$128/t" as "this
-  shape and sign are real, this precision is not."
+  table above) are the load-bearing outputs; treat "-$186/t" (the
+  2026-09-24 reading) as "this shape and sign are real, this precision is
+  not."
 - **The DRC/Zambia regional benchmark is only ~9 weeks old** (launched
   2026-06-05) and its "unchanged for five consecutive weeks" print is
   reported here exactly as ambiguous as the source article treats it —
   consistent with genuine stability OR a thin market with no fresh
   transaction. Do not read "unchanged" as "stable" in any downstream
   summary of this note.
-- **"Physical response: EMERGING" rests on two pieces of evidence, not
-  one** (SMM's TC-negotiation-resistance note and a reported July output
-  decline) **and neither cleanly isolates the acid-cushion mechanism from
-  plain concentrate scarcity** as the cause. Don't upgrade this to
-  CONFIRMED without a smelter statement that actually says so.
+- **"Physical response: EMERGING, STRENGTHENING" rests on four pieces of
+  evidence, not one** (SMM's TC-negotiation-resistance note, a reported
+  July output decline, SMM's 2026-09-18 "production cut intentions
+  emerging" language, and CSPT declining to set a Q4 TC guidance price on
+  2026-09-24) **and none of them cleanly isolates the acid-cushion
+  mechanism from plain concentrate scarcity** as the cause. Don't upgrade
+  this to CONFIRMED without a smelter statement that actually says so.
 - **This note's own `DEFAULT_CU_PARAMS`** (the representative-smelter
   calibration behind the treatment-margin figures) is the SAME set of
   parameters used throughout this project — `acid_yield` and
@@ -321,6 +388,23 @@ proving the margin-ex-acid / acid-contribution split is exact.
   calibration), which is exactly why the Kamoa case study above is this
   note's most load-bearing real-money evidence, not the DEFAULT_CU_PARAMS
   treatment-margin figures.
+- **Added 2026-09-25 — the TC and acid figures throughout are SMM's
+  published BENCHMARK index levels, not any specific real smelter's
+  actual realized economics**, and this project does not net out
+  freight, handling, storage, or VAT treatment between the SMM index and
+  what a smelter actually books as revenue — none of these have a
+  public, citable figure for this market, and this project does not
+  fabricate one rather than leave the gap disclosed. The one place real,
+  company-disclosed realized economics exist is Kamoa-Kakula, which is
+  why it is kept as a separate case study rather than folded into the
+  benchmark-model figures.
+- **Added 2026-09-25 — Kamoa's own "Acid/OPEX coverage" ratio and the
+  benchmark model's "Acid Cushion Ratio" (Acid ÷ \|TC\|) are
+  methodologically different measurements** that used to share the same
+  name in this note ("cushion ratio") — fixed; see the terminology note
+  in the Kamoa case study above. Both narrow over the period covered
+  here, which is the genuinely useful read, but they are not on the same
+  scale and should not be quoted as if they were.
 
 ---
 
@@ -342,17 +426,25 @@ core finding (acid price rising alongside, not falling with, TC weakness)
 and are listed first for that reason:
 
 1. ~~**`zn_price` is still 100% invented, not real, throughout this
-   note.**~~ **RESOLVED 2026-09-16** — `data/fred_zinc.csv` has since
-   been downloaded and added; `real_data_check.py`'s `zn_price` column is
-   now real for every quarter it covers. The dollar figures below (e.g.
-   "roughly +100 $/t to zinc's margin change") were computed on the
-   PREVIOUS, invented `zn_price` (2500 / 2450 / 2600 / 2750 / 3100 /
-   3050) and have NOT been individually re-verified against the now-real
-   data in this note's prose — re-run `real_data_check.py` for the
-   current figures before quoting a specific dollar number from this
-   section; the qualitative finding (acid positive, TC negative, acid
-   dominating) is unlikely to have flipped, but the magnitudes below are
-   from the old, invented run.
+   note.**~~ **RESOLVED 2026-09-16** (real data added) **and re-run
+   2026-09-25** — `data/fred_zinc.csv` has since been downloaded and
+   added; `real_data_check.py`'s `zn_price` column is now real for every
+   quarter it covers. The dollar figures below (e.g. "roughly +100 $/t to
+   zinc's margin change") were originally computed on the PREVIOUS,
+   invented `zn_price` (2500 / 2450 / 2600 / 2750 / 3100 / 3050) and sat
+   un-re-verified for over a week — including a derived "share of margin
+   change" paragraph that carried the same staleness WITHOUT its own "see
+   correction note" flag, and was consequently still wrong when actually
+   checked. Both are now fixed in place (2026-09-25, by actually running
+   `real_data_check.py`): the dollar figures are $106.8/t (zinc acid),
+   $88.6/t (copper acid), -$110.0/t (zinc TC), -$90.0/t (copper TC); the
+   share-of-margin-change figures are -25.4%/-7.2% (TC) and +24.6%/+7.1%
+   (acid). The qualitative finding (acid positive, TC negative, acid
+   dominating, zinc more geared than copper on both legs) did not flip —
+   but the specific percentages had drifted further from the dollar
+   figures than expected, which is exactly why "a caveat next to the
+   dollar figures" isn't the same guarantee as "re-run before quoting
+   anything downstream of them," and both are worth doing together.
 2. **`threshold_gap`'s sign convention was documented backwards in
    `margin_model.py` (now fixed).** The arithmetic (`Acid*_Zn - Acid*_Cu`)
    was always correct; a positive gap has always meant zinc's curtailment
@@ -388,8 +480,7 @@ and are listed first for that reason:
    cny_to_usd()`, a period-matched quarterly FX table, instead. USD/CNY
    moved from ~7.1-7.3 in 2023-2025 to ~6.7-7.0 by mid-2026, so the flat
    rate was understating 2026 acid prices in USD terms by roughly 5-8% —
-   another reason to treat this note's 2026 dollar figures as provisional
-   pending a full re-run (see point 1).
+   folded into the 2026-09-25 re-run referenced in point 1, above.
 
 Everything below this point is the note as it stood before this review —
 kept as-is except where a footnote marks a specific figure affected by
@@ -457,31 +548,41 @@ a genuine natural hedge in the current regime, not a modelling artefact —
 approximation error in the arithmetic itself) on 2024-Q1 → 2026-Q2 inputs,
 using `acid_yield` values now derived from cited industry stoichiometry
 rather than invented (see `model_a.py`'s calibration notes), shows the
-acid channel contributing **roughly +100 $/t to zinc's margin change and
-+85 $/t to copper's** *(see correction note points 1 and 5 — this figure
-used invented `zn_price` and the old flat FX rate; re-verify with a fresh
-run)*, both positive, while TC contributed **roughly -110 $/t (zinc) and
--90 $/t (copper)** — acid offsetting close to all of TC's drag on zinc and
-most of it on copper. Say "roughly," not "exactly": the arithmetic is
-exact, and `acid_yield` is now a cited figure (~2 t acid/t zinc metal per
-AusIMM; 3.0-3.5 t acid/t copper metal per a 2026 industry review — see
-`model_a.py`), but `payable_fraction`, `conversion_cost`, `energy_per_t`,
-`premium` and both by-product-yield-adjacent inputs stay rule-of-thumb or
-invented, and several of the real-data price points are interpolated
-between cited dates rather than cited themselves (see
-`real_data_check.py`'s header comment for exactly which cells are which).
-The **direction and rough order of magnitude** — acid positive, TC
-negative, both material — is the load-bearing finding here; the specific
-dollar figures are better grounded than the first draft of this note but
-still not precise enough to defend to a decimal place, and this section
-specifically still needs the real-data re-run noted in the correction note.
+acid channel contributing **+$106.8/t to zinc's margin change and +$88.6/t
+to copper's** *(re-verified 2026-09-25 by actually running
+`real_data_check.py` on real data — see this note's changelog. The prior
+draft flagged these as needing a re-run on real `zn_price`/FX rather than
+the original invented placeholder and flat FX rate; that re-run is now
+done and these are the real-data figures, not rounded placeholders)*,
+both positive, while TC contributed **-$110.0/t (zinc) and -$90.0/t
+(copper)** — acid offsetting close to all of TC's drag on zinc and most
+of it on copper. The arithmetic is exact, and `acid_yield` is now a cited
+figure (~2 t acid/t zinc metal per AusIMM; 3.0-3.5 t acid/t copper metal
+per a 2026 industry review — see `model_a.py`), but `payable_fraction`,
+`conversion_cost`, `energy_per_t`, `premium` and both by-product-yield-
+adjacent inputs stay rule-of-thumb or invented, and several of the
+real-data price points are interpolated between cited dates rather than
+cited themselves (see `real_data_check.py`'s header comment for exactly
+which cells are which) — so treat the **direction and order of magnitude**
+as the load-bearing finding, not the fourth significant figure.
 
 This does not kill the underlying asymmetry, but it changes its shape.
 As a *share of each metal's own total margin change* over the same window,
-TC's drag is proportionally far larger for zinc (-44%) than for copper
-(-15%), and so is acid's offset (+41% vs +14%) — zinc's margin is
-structurally more geared to both channels, because its baseline
-metal-revenue cushion is thinner relative to copper's. That's a real,
+TC's drag is proportionally larger for zinc (**-25.4%**) than for copper
+(**-7.2%**), and so is acid's offset (**+24.6%** vs **+7.1%**) — zinc's
+margin is structurally more geared to both channels, because its baseline
+metal-revenue cushion is thinner relative to copper's. **Fixed 2026-09-25:
+this paragraph previously read "-44%/-15%, +41%/+14%"** — figures computed
+under the same old invented-`zn_price`/flat-FX run flagged above, but
+(unlike the dollar figures right above them) never explicitly marked as
+needing a re-run, so they sat here for over a week reading as validated
+when they weren't. On the actual re-run, the total margin-change
+denominator each ratio divides by moved by more than the acid/TC dollar
+figures did (real `zn_price` swung further than the old placeholder), so
+the SHARE figures changed more than the dollar figures did, even though
+the underlying dollar-figure caveat covered both. The direction of the
+asymmetry (zinc more geared than copper, on both legs) is unchanged and
+still real; only the specific percentages were wrong. That's a real,
 quantifiable asymmetry, and it is now reinforced by a second, independent
 one: with `acid_yield` corrected to real stoichiometric ratios, zinc's
 acid sensitivity (`acid_sensitivity_zn`, $ per $ of acid price, per tonne
@@ -627,11 +728,13 @@ even more than previously modelled (its 2024-Q1→2026-Q2 real price move
 was larger than the round number this note originally assumed), which
 *sharpens* the zinc-vs-copper asymmetry (zinc structurally more exposed
 to the acid/TC channels as a share of its own margin move) rather than
-softening it. The figures printed in "The finding that changes the
-thesis," above, still reflect the OLD invented `zn_price` and the OLD
-flat FX rate (see correction note points 1 and 5) — re-run
-`real_data_check.py` for the current numbers before quoting a specific
-dollar figure from that section externally.
+softening it. **RESOLVED 2026-09-25**: the figures in "The finding that
+changes the thesis," above, previously still reflected the OLD invented
+`zn_price` and the OLD flat FX rate (correction note points 1 and 5) —
+they have now actually been re-run and corrected in place (dollar figures
+and share-of-margin-change percentages both), rather than left flagged
+as pending. See correction note point 1 for the specific before/after
+numbers.
 
 ## Known limitations (thesis-level, not code-level — see README.md for those)
 
@@ -708,3 +811,61 @@ dollar figure from that section externally.
   `implied_acid_yield_and_buffer()`, which derives its own implied yield
   from Kamoa's own disclosed numbers rather than trusting
   `SmelterParams.acid_yield` — see "A real modeling gap," above.)
+
+## Changelog — 2026-09-25
+
+A second review pass extended Part One's data three weeks (to
+2026-09-24), found and fixed two real code bugs that the extension
+exposed, fixed two methodological/labelling issues, and fixed one stale,
+previously-unflagged figure in Part Two. Full technical detail (the two
+bugs, the exact citations for the new data points, and which parts of an
+external review's larger refactor proposal were adopted vs. declined and
+why) is in `README.md`'s own 2026-09-25 changelog — not duplicated here
+in full. Summary of what changed in THIS document specifically:
+
+- **Part One's entire "current read" section** (headline table, trend,
+  stress test, dashboard, Kamoa comparison, robustness section)
+  **updated from the 2026-09-04 snapshot to 2026-09-24** — most
+  consequentially, the Acid Cushion Ratio fell from 94.3% to 68.2% in
+  three weeks, a materially faster deterioration than the prior snapshot
+  alone suggested.
+- **"What would move this thesis"** now distinguishes the sulphuric-acid
+  export halt (through end-2026, per CRU/decree reporting) from the
+  source article's "August 31 fertiliser deadline," which turns out to be
+  a different, routine, annual policy — evidence on the fertiliser
+  question itself stayed mixed as of this check.
+- **Kamoa's "cushion ratio" relabelled "Acid/OPEX coverage"** throughout,
+  to stop implying it's the same measurement as the benchmark model's
+  Acid ÷ \|TC\| ratio (it divides by a different, broader denominator).
+- **Correction note point 1, and the "finding that changes the thesis"
+  paragraph it flagged, resolved**: both the dollar figures AND a
+  derived "share of margin change" paragraph that had been carrying the
+  same staleness without its own flag are now re-run and corrected in
+  place (-44%/-15%/+41%/+14% → -25.4%/-7.2%/+24.6%/+7.1%; the direction
+  of the underlying zinc-more-geared-than-copper asymmetry did not
+  change, only the specific percentages).
+- Two new "known limitations" bullets added: the benchmark model's TC/
+  acid figures are SMM benchmark index levels, not any specific
+  smelter's realized/net-of-freight-and-VAT economics (Kamoa's own
+  disclosure is the one place real realized economics exist in this
+  project); and the Kamoa-vs-benchmark ratio-naming fix above.
+
+**What an external review's larger refactor proposal got right, and
+what this pass declined, and why:** see README.md's 2026-09-25
+changelog for the full reasoning — in short, the two concrete bugs it
+flagged (the interpolation grid, the Model B vintage mismatch) were
+real and are fixed; its proposal to net a virgin-sulfur feedstock cost
+against the copper smelter's own acid credit was declined as a genuine
+conceptual error (copper smelters produce acid from SO2 already captured
+from concentrate they're smelting anyway, at near-zero marginal
+feedstock cost — that's the entire reason the acid credit is such a
+powerful cushion; buying market sulfur is a different business); its
+proposed binary margin-triggers-shutdown curtailment rule was declined
+as directly contradicting this note's own "Known limitations" point on
+policy-driven curtailment, above; and its larger architecture proposals
+(machine-readable provenance objects, a generic vintage-access layer,
+automated ingestion/CI, a dashboard) were judged disproportionate to
+what this project actually is — a strategist's research note, not a
+production trading-desk data platform — and would have required
+fabricating inputs (freight, VAT, utilization-elasticity coefficients)
+this project has no public source for.

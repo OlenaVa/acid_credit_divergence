@@ -49,9 +49,9 @@ from thesis_monitor import MonitorConfig
 
 
 def run_model_b_acid_robustness(
-    weekly: pd.DataFrame,
-    cu_params: SmelterParams = DEFAULT_CU_PARAMS,
-    energy_price_usd_mwh: float = ENERGY_PRICE_USD_MWH,
+        weekly: pd.DataFrame,
+        cu_params: SmelterParams = DEFAULT_CU_PARAMS,
+        energy_price_usd_mwh: float = ENERGY_PRICE_USD_MWH,
 ) -> dict:
     """
     `weekly` is model_a.run_model_a_copper_acid_cushion()['weekly'] -- this
@@ -63,40 +63,82 @@ def run_model_b_acid_robustness(
     not glossed over):
 
     (1) acid_price_source -- SMM China domestic (primary) vs SMM EXW DRC
-        vs SMM EXW Zambia, all evaluated at the latest date the regional
-        benchmark actually has a print (2026-09-04). CAVEAT: DRC/Zambia
-        are a different physical market (African mine-adjacent smelters
-        selling acid regionally) from the Chinese domestic smelter this
-        project's TC series describes -- this is NOT "the same smelter,
-        priced two ways." It answers a narrower, still useful question:
-        is the ~94% cushion-ratio READING peculiar to China's domestic
-        price level, or does it hold up (roughly) at a materially
-        different acid price too? Below $400/t (Zambia), it does not --
-        see the result and STRATEGY_NOTE.md.
+        vs SMM EXW Zambia, all evaluated at a SINGLE reference date: the
+        latest date the regional benchmark itself actually has a print
+        (read dynamically off `cad.REGIONAL_ACID_BENCHMARK["weekly"]`'s
+        own last entry -- see the BUG FIX note inline below for why this
+        must not be hardcoded or read off `weekly.iloc[-1]`). CAVEAT:
+        DRC/Zambia are a different physical market (African mine-adjacent
+        smelters selling acid regionally) from the Chinese domestic
+        smelter this project's TC series describes -- this is NOT "the
+        same smelter, priced two ways." It answers a narrower, still
+        useful question: is the cushion-ratio READING peculiar to China's
+        domestic price level, or does it hold up (roughly) at a
+        materially different acid price too? Below $400/t (Zambia), it
+        does not -- see the result and STRATEGY_NOTE.md.
 
     (2) tc_index_provider -- SMM's TC print vs S&P Global Platts' CIF
         China TC assessment, compared at the nearest dates both actually
         published one (SMM 2026-04-24 vs Platts 2026-04-09, 15 days
         apart -- not the same day, the closest real overlap found). Checks
         whether "TC is in extreme-negative territory" is an SMM-specific
-        read or holds across index providers. It does.
+        read or holds across index providers. It does (tc_provider_agreement_
+        usd_dmt is the only output this core check actually needs). The
+        margin/cushion columns attached to each provider row are a
+        SEPARATE, secondary illustration -- "what would today's smelter
+        economics look like if TC reverted to its April level" -- using
+        `weekly`'s own TRUE latest cu_price/acid_usd_t deliberately held
+        fixed while only TC is flexed, the same "hold everything else at
+        the last observation, flex one input" convention used by
+        `acid_stress_test()`/`energy_stress_test()` elsewhere in this
+        project. It is NOT a reconstruction of April's actual margin (that
+        would need April's own acid/copper prices) -- do not read it as one.
     """
     latest = weekly.iloc[-1]
 
     # --- (1) acid price source ---------------------------------------
-    drc_price, zambia_price = None, None
-    for date_str, drc, zambia, status in cad.REGIONAL_ACID_BENCHMARK["weekly"]:
-        if date_str == "2026-09-04":
-            drc_price, zambia_price = drc, zambia
+    # Regional benchmark's own most recent print. NOT hardcoded to a
+    # specific date string: that used to be "2026-09-04" here, which was
+    # correct only because it happened to be REGIONAL_ACID_BENCHMARK's
+    # sole real print at the time this function was first written --
+    # hardcoding it meant the comparison would keep using that same date
+    # forever, silently, even once the benchmark gets a fresher print.
+    # Reads the benchmark's own last entry instead, whatever date that is.
+    regional_date_str, drc_price, zambia_price, regional_status = (
+        cad.REGIONAL_ACID_BENCHMARK["weekly"][-1]
+    )
+    regional_date = pd.Timestamp(regional_date_str)
+
+    # BUG FIX (found 2026-09-25, exposed by extending the China TC/acid
+    # series to 2026-09-24 while REGIONAL_ACID_BENCHMARK's own latest
+    # print stayed at 2026-09-04): this comparison needs cu_price/TC/
+    # silver_price held at a SINGLE consistent snapshot across all three
+    # acid-price sources, or it silently stops being an apples-to-apples
+    # comparison. The old code always used `weekly.iloc[-1]` here -- fine
+    # as long as the domestic series and the regional benchmark happened
+    # to share the same latest date (they did, both 2026-09-04, when this
+    # was first written), but wrong the moment they diverge: it would
+    # compare TODAY's China TC/domestic-acid reading against THREE-WEEK-
+    # OLD DRC/Zambia prices, under a TC value DRC/Zambia's own print never
+    # actually coexisted with -- directly contradicting this function's
+    # own docstring promise to evaluate "at the latest date the regional
+    # benchmark actually has a print." Pin the snapshot to the row in
+    # `weekly` matching the regional benchmark's OWN date instead.
+    if regional_date in weekly.index:
+        reference_row = weekly.loc[regional_date]
+    else:
+        nearest_pos = weekly.index.get_indexer([regional_date], method="nearest")[0]
+        reference_row = weekly.iloc[nearest_pos]
+
     sources = {
-        "smm_china_domestic": latest["acid_usd_t"],
+        "smm_china_domestic": reference_row["acid_usd_t"],
         "smm_exw_drc": drc_price,
         "smm_exw_zambia": zambia_price,
     }
     acid_source_rows = []
     for name, price in sources.items():
-        res = residual_margin(cu_params, latest["cu_price"], latest["tc_usd_dmt"], price,
-                               energy_price_usd_mwh, silver_price=latest["silver_price"])
+        res = residual_margin(cu_params, reference_row["cu_price"], reference_row["tc_usd_dmt"], price,
+                              energy_price_usd_mwh, silver_price=reference_row["silver_price"])
         acid_rev = res["acid_contribution"]
         acid_source_rows.append({
             "acid_price_source": name,
@@ -104,7 +146,7 @@ def run_model_b_acid_robustness(
             "acid_contribution": acid_rev,
             "margin_ex_acid": res["margin_ex_acid"],
             "total_margin": res["total_margin"],
-            "acid_cushion_ratio": acid_cushion_ratio(acid_rev, latest["tc_usd_dmt"]),
+            "acid_cushion_ratio": acid_cushion_ratio(acid_rev, reference_row["tc_usd_dmt"]),
         })
     acid_price_source_df = pd.DataFrame(acid_source_rows)
 
@@ -117,7 +159,7 @@ def run_model_b_acid_robustness(
     ]
     for row in tc_provider_rows:
         res = residual_margin(cu_params, latest["cu_price"], row["tc_usd_dmt"], latest["acid_usd_t"],
-                               energy_price_usd_mwh, silver_price=latest["silver_price"])
+                              energy_price_usd_mwh, silver_price=latest["silver_price"])
         row["margin_ex_acid"] = res["margin_ex_acid"]
         row["total_margin"] = res["total_margin"]
         row["acid_cushion_ratio"] = acid_cushion_ratio(res["acid_contribution"], row["tc_usd_dmt"])
@@ -126,25 +168,36 @@ def run_model_b_acid_robustness(
 
     return {
         "acid_price_source": acid_price_source_df,
+        "acid_price_source_reference_date": regional_date.date().isoformat(),
+        "domestic_series_latest_date": weekly.index[-1].date().isoformat(),
         "tc_index_provider": tc_provider_df,
         "tc_provider_agreement_usd_dmt": tc_provider_agreement_usd,
         "caveat": (
             "acid_price_source compares markets, not the same smelter under "
             "different price feeds -- DRC/Zambia are regional export "
             "benchmarks, not what a Chinese domestic smelter actually "
-            "realizes. tc_index_provider compares dates 15 days apart, the "
-            "closest real overlap available, not a same-day cross-check."
+            "realizes. It is evaluated as of the regional benchmark's own "
+            f"latest print ({regional_date.date().isoformat()}), which may "
+            f"be an earlier date than the domestic TC/acid series' own "
+            f"latest reading ({weekly.index[-1].date().isoformat()}) -- "
+            "the two dates are reported separately above precisely so "
+            "they are never silently conflated. tc_index_provider compares "
+            "dates 15 days apart, the closest real overlap available, not "
+            "a same-day cross-check; its margin/cushion columns hold "
+            "today's cu_price/acid_usd_t fixed and flex only TC (see "
+            "docstring) -- they are a stress-test illustration, not a "
+            "reconstruction of April's actual margin."
         ),
     }
 
 
 def run_model_b(
-    df_base: pd.DataFrame,
-    regional_acid_prices: Dict[str, pd.Series],
-    tc_variants: Dict[str, pd.DataFrame],
-    zn_params: SmelterParams = DEFAULT_ZN_PARAMS,
-    cu_params: SmelterParams = DEFAULT_CU_PARAMS,
-    monitor_cfg: MonitorConfig = MonitorConfig(),
+        df_base: pd.DataFrame,
+        regional_acid_prices: Dict[str, pd.Series],
+        tc_variants: Dict[str, pd.DataFrame],
+        zn_params: SmelterParams = DEFAULT_ZN_PARAMS,
+        cu_params: SmelterParams = DEFAULT_CU_PARAMS,
+        monitor_cfg: MonitorConfig = MonitorConfig(),
 ) -> dict:
     """SECONDARY / cross-metal, synthetic-regional-variant robustness check
     (see module docstring). Re-runs Model A's zinc-vs-copper logic across:
@@ -235,10 +288,10 @@ def run_model_b(
 
 
 def run_cost_stress(
-    df: pd.DataFrame,
-    zn_params: SmelterParams = DEFAULT_ZN_PARAMS,
-    cu_params: SmelterParams = DEFAULT_CU_PARAMS,
-    shocks=(0.0, 0.05, 0.10, 0.20),
+        df: pd.DataFrame,
+        zn_params: SmelterParams = DEFAULT_ZN_PARAMS,
+        cu_params: SmelterParams = DEFAULT_CU_PARAMS,
+        shocks=(0.0, 0.05, 0.10, 0.20),
 ) -> pd.DataFrame:
     """Section-19 style: what happens to zinc vs copper margin if
     conversion + energy cost rise 5/10/20%, holding prices/TC/acid fixed
@@ -247,11 +300,11 @@ def run_cost_stress(
     for in place of a fabricated exact energy P&L."""
     last = df.iloc[-1]
     zn = energy_stress_test(zn_params, last["zn_price"], last["zn_tc"], last["acid_price"],
-                             last["energy_price"], shocks=shocks,
-                             silver_price=last.get("silver_price", 0.0))
+                            last["energy_price"], shocks=shocks,
+                            silver_price=last.get("silver_price", 0.0))
     cu = energy_stress_test(cu_params, last["cu_price"], last["cu_tc"], last["acid_price"],
-                             last["energy_price"], shocks=shocks,
-                             silver_price=last.get("silver_price", 0.0))
+                            last["energy_price"], shocks=shocks,
+                            silver_price=last.get("silver_price", 0.0))
     zn = zn.rename(columns={"margin": "zn_margin"})
     cu = cu.rename(columns={"margin": "cu_margin"})
     out = zn.merge(cu, on="cost_shock")

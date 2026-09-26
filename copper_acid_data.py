@@ -29,8 +29,12 @@ quarterly table -- extended here to a weekly cadence and a single-metal
 focus, because that is the actual cadence and focus of the thesis being
 tested.
 
-Sources checked 2026-09-16. Full citation list at the bottom of each
-constant's definition.
+Sources checked 2026-09-16; TC and acid weekly series, physical-response
+evidence, and the fertiliser/acid-export-policy note extended 2026-09-25
+with three additional real, cited weekly prints (2026-09-11, 09-18, 09-24)
+plus two new physical-response citations -- see README.md's changelog for
+the full list of what changed in that pass. Full citation list at the
+bottom of each constant's definition.
 """
 
 from __future__ import annotations
@@ -193,9 +197,30 @@ CU_ACID_WEEKLY_RAW = [
      "44 yuan/t from the previous Friday') -- 1,539.5 + 44 = 1,583.5."),
     ("2026-09-04", 1539.5, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,539.5/t, the NINTH "
-     "consecutive weekly decline (source article's headline acid figure "
-     "-- this is the most recent print as of this project's "
-     "data-collection date)."),
+     "consecutive weekly decline (source article's headline acid "
+     "figure)."),
+    ("2026-09-11", 1418.0, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,418.0/t, the TENTH "
+     "consecutive weekly decline, down RMB 121.5/t or 7.9% WoW -- "
+     "back-calculated from the 2026-09-18 print's own citation of 'the "
+     "previous week's drop of 121.5 yuan/mt or 7.9%' (news.metal.com, "
+     "SMM China Sulphuric Acid Weekly Review, 2026-09-18). Added "
+     "2026-09-25."),
+    ("2026-09-18", 1351.0, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,351.0/t, down RMB 67/t "
+     "or 4.7% from RMB 1,418/t -- the ELEVENTH consecutive weekly "
+     "decline, a sharp narrowing from the prior week's 7.9% drop "
+     "(news.metal.com, SMM China Sulphuric Acid Weekly Review, "
+     "2026-09-18). Added 2026-09-25."),
+    ("2026-09-24", 1247.5, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,247.5/t, down RMB "
+     "103.5/t or 7.7% from RMB 1,351/t the previous Friday -- the "
+     "TWELFTH consecutive weekly decline (news.metal.com, 'CSPT Meeting "
+     "Decides Not to Set Q4 Copper Concentrate TC Guidance Price', "
+     "2026-09-24 SMM Sulphuric Acid Weekly Review). Dated and "
+     "grid-charted exactly as the 2026-09-24 TC print above -- see that "
+     "row's note. Added 2026-09-25; most recent print as of this "
+     "project's current data-extension pass."),
 ]
 
 
@@ -258,9 +283,27 @@ def _interpolate_to_grid(df: pd.DataFrame, value_col: str, freq="W-FRI") -> pd.D
     combined_index = df.index.union(full_index).sort_values()
     out = df[[value_col]].reindex(combined_index)
     out[value_col] = out[value_col].interpolate(method="time")
-    out["status"] = df["status"].reindex(combined_index)
-    out["status"] = out["status"].fillna("interpolated (grid-fill)")
-    return out.reindex(full_index, method="nearest", tolerance=pd.Timedelta("3D")).ffill()
+    out = out.reindex(full_index, method="nearest", tolerance=pd.Timedelta("3D")).ffill()
+
+    # Status is computed SEPARATELY from the value, by snapping each raw
+    # cited/derived date straight onto its nearest grid date (same 3-day
+    # tolerance as the value's own snap above). This matters specifically
+    # for an off-cycle raw date (e.g. the 2026-09-24 Thursday print, which
+    # lands on grid date 2026-09-25): the OLD version of this line built
+    # `status` off `combined_index` (raw dates UNION grid dates), so an
+    # off-cycle raw date and its nearby grid date were two DIFFERENT rows
+    # in that intermediate frame -- the raw date correctly got its own
+    # "cited" status, but the grid date (which is what actually survives
+    # into the final output) had no status of its own and fell through to
+    # the "interpolated (grid-fill)" default, mislabeling a genuinely
+    # cited value as merely interpolated. Reindexing `status` straight
+    # from `df` onto `full_index` with the same nearest/3-day rule used
+    # for the value avoids that: a value and the status describing it are
+    # now guaranteed to come from the same source row.
+    out["status"] = df["status"].reindex(
+        full_index, method="nearest", tolerance=pd.Timedelta("3D")
+    ).fillna("interpolated (grid-fill)")
+    return out
 
 
 def _selfcheck_grid_never_drops_latest_point():
@@ -281,6 +324,9 @@ def _selfcheck_grid_never_drops_latest_point():
     assert grid["v"].iloc[-1] == 50.0, (
         f"grid's last row does not carry the latest cited value: got "
         f"{grid['v'].iloc[-1]}, expected 50.0")
+    assert grid["status"].iloc[-1] == "cited", (
+        f"grid's last row mislabels a genuinely cited, off-cycle-snapped "
+        f"point as {grid['status'].iloc[-1]!r} instead of 'cited'")
 
 
 def cu_tc_weekly_interpolated() -> pd.DataFrame:
@@ -474,6 +520,39 @@ SULPHUR_TRADE_CONTEXT = {
         "announcement) -- a genuine data-availability constraint on any "
         "acid-export-price series going forward, not just an editorial choice."
     ),
+    "acid_export_halt_vs_fertiliser_export_window": (
+        "ADDED 2026-09-25 -- clarifies the source article's third 'what to "
+        "watch' variable, which names only 'China's fertiliser export "
+        "policy after the August 31 deadline'. Two DIFFERENT Chinese "
+        "export policies are relevant here, and the article's phrasing "
+        "risks conflating them: (1) the sulphuric-ACID-specific export "
+        "halt itself -- the direct driver of the May->June export collapse "
+        "in this dict (116.7kt -> 980t) -- which CRU reporting (citing the "
+        "relevant government decree) describes as in force from the start "
+        "of May THROUGH THE END OF 2026, i.e. not tied to Aug 31 at all; "
+        "and (2) a SEPARATE, ROUTINE, ANNUAL phosphate-FERTILISER (DAP/MAP) "
+        "export-declaration control that China implements every year from "
+        "March 14 to August 31 (this is the actual mechanism behind the "
+        "article's 'August 31 deadline' -- an every-year expiry date, not "
+        "a discretionary response invented for the 2026 acid squeeze). On "
+        "this second, narrower point, evidence checked 2026-09-25 is "
+        "ITSELF mixed: one SMM flash note says the routine window is "
+        "'expected to be lifted' from Sept 1 as usual; S&P Global Platts "
+        "(2026-09-02) reports producers had received no official guidance "
+        "on DAP/MAP export resumption and a trader thought exports might "
+        "not resume in 2026 at all. Net read: the fertiliser-export "
+        "question the article flags has NOT cleanly resolved either way, "
+        "but it was likely never the right lever on the acid glut "
+        "specifically -- the acid export halt runs on its own, longer "
+        "timeline (through end-2026) regardless of what happens with "
+        "phosphate fertiliser exports. That points toward 'sticky, "
+        "policy-driven' for the acid-export side of the glut, independent "
+        "of the fertiliser-demand question the article poses. Sources: "
+        "CRU smelter-economics piece (cited elsewhere in this file) for "
+        "the acid-halt duration; SMM Flash on phosphate-fertiliser export "
+        "controls; S&P Global Commodity Insights, 'China phosphate "
+        "fertilizer exporters await clarity...', 2026-09-02."
+    ),
     "note": (
         "China's sulphuric-acid export collapse (source article's central "
         "supply-side story) and the Kpler-tracked Gulf sulphur disruption are "
@@ -568,12 +647,70 @@ PHYSICAL_RESPONSE_EVIDENCE = {
         "independent of whether the TC/acid margin math on the concentrate "
         "it DOES get is favourable)."
     ),
+    "smm_production_cut_intentions_sept18": (
+        "ADDED 2026-09-25. news.metal.com, 'Imported Copper Concentrate "
+        "TCs Continue to Fall, with Some Smelters Beginning to Show "
+        "Willingness to Cut Production' (SMM Copper Concentrate Spot "
+        "Weekly Review, 2026-09-18): SMM reports declining smelter "
+        "willingness to accept current spot terms, with 'production cut "
+        "intentions emerging'. This is a genuine escalation from the "
+        "Sept-4 'negotiating resistance' framing -- it is the first "
+        "sources-checked instance of language about actually CUTTING "
+        "output, not just pushing back on price. Still short of a "
+        "confirmed, named smelter announcing a specific curtailment: "
+        "'intentions emerging' is SMM's own characterization of "
+        "sentiment, not a tally of announced cuts."
+    ),
+    "cspt_no_q4_tc_guidance_sept24": (
+        "ADDED 2026-09-25. news.metal.com, 'CSPT Meeting Decides Not to "
+        "Set Q4 Copper Concentrate TC Guidance Price -- SMM Copper "
+        "Concentrate Spot Weekly Review', 2026-09-24: the CSPT (China "
+        "Smelters Purchase Team -- the group that normally sets a "
+        "quarterly TC floor/guidance for Chinese smelters) met and did "
+        "NOT set a Q4 guidance price at all. A failure to agree on any "
+        "number is itself informative -- it suggests the smelter side and "
+        "the miner/trader side are too far apart to converge on a "
+        "reference TC, consistent with (but not proof of) the acid-cushion "
+        "thesis's premise that the negative-TC regime is now genuinely "
+        "contested rather than just an accepted, priced-in cost of doing "
+        "business. Read as PROCESS evidence (the negotiation itself is "
+        "breaking down), not as a physical output signal on its own."
+    ),
     "reading": (
-        "EMERGING, not yet CONFIRMED: there is real evidence of both "
-        "negotiating resistance and an actual output decline, but no "
-        "smelter statement in the sources checked explicitly attributes "
-        "a production cut TO the shrinking acid cushion specifically, as "
-        "opposed to concentrate scarcity or the extreme TC alone. Treat "
-        "'physical response' as a claim still being built, not settled."
+        "EMERGING, STRENGTHENING, still not CONFIRMED: as of the original "
+        "2026-09-04/16 pass there was negotiating resistance plus an "
+        "unattributed output decline. As of 2026-09-25, two more pieces of "
+        "evidence point the same direction -- SMM's own language has moved "
+        "from 'resistance' to 'production cut intentions emerging' "
+        "(2026-09-18), and CSPT's quarterly guidance-setting process itself "
+        "broke down for Q4 (2026-09-24). Neither is a named smelter "
+        "announcing a specific, dated curtailment explicitly attributed to "
+        "the acid cushion -- that bar still has not been cleared in the "
+        "sources checked. Treat 'physical response' as a claim that has "
+        "gotten materially closer to CONFIRMED over the past three weeks, "
+        "not one that has arrived there."
     ),
 }
+
+
+if __name__ == "__main__":
+    _selfcheck_grid_never_drops_latest_point()
+    _tc_grid = cu_tc_weekly_interpolated()
+    _acid_grid = cu_acid_weekly_interpolated()
+    assert _tc_grid.index.max() == pd.Timestamp("2026-09-25"), (
+        f"TC grid's last date is {_tc_grid.index.max()}, expected "
+        f"2026-09-25 (the Friday nearest the 2026-09-24 cited print)")
+    assert _acid_grid.index.max() == pd.Timestamp("2026-09-25"), (
+        f"acid grid's last date is {_acid_grid.index.max()}, expected "
+        f"2026-09-25")
+    assert abs(_tc_grid["tc_usd_dmt"].iloc[-1] - (-224.53)) < 1e-6, (
+        "TC grid's last value does not match the 2026-09-24 cited print")
+    assert abs(_acid_grid["acid_cny_t"].iloc[-1] - 1247.5) < 1e-6, (
+        "acid grid's last value does not match the 2026-09-24 cited print")
+    print("copper_acid_data.py self-checks passed:")
+    print(f"  TC grid runs through   {_tc_grid.index.max().date()}  "
+          f"(latest: {_tc_grid['tc_usd_dmt'].iloc[-1]:.2f} USD/dmt, "
+          f"status={_tc_grid['status'].iloc[-1]})")
+    print(f"  Acid grid runs through {_acid_grid.index.max().date()}  "
+          f"(latest: {_acid_grid['acid_cny_t'].iloc[-1]:.1f} CNY/t, "
+          f"status={_acid_grid['status'].iloc[-1]})")

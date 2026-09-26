@@ -120,14 +120,20 @@ def render_monitor_text(result: dict) -> str:
       f"{zn['zn_tc_annual_benchmark_2026_usd_dmt']:.0f}/dmt annual benchmark -- same by-product-cushion")
     L("                   mechanism (silver + acid) at an even more extreme TC level.")
     kq = c["kamoa_quarterly"]
-    L(f"  Kamoa-Kakula:    cushion ratio Q1 {kq.loc['2026-Q1','acid_cushion_ratio']*100:.1f}% -> "
+    L(f"  Kamoa-Kakula:    acid/OPEX coverage* Q1 {kq.loc['2026-Q1','acid_cushion_ratio']*100:.1f}% -> "
       f"Q2 {kq.loc['2026-Q2','acid_cushion_ratio']*100:.1f}% "
       f"({c['q1_to_q2_cushion_change_ppt']*100:+.1f}pp) -- narrowing visible in its OWN")
     L("                   disclosed numbers, ahead of the SMM index-level shrinkage.")
+    L("                   *Kamoa's own ratio is Acid Credit / TOTAL SMELTER OPEX (its disclosure has no TC")
+    L("                   line) -- a different, broader denominator than the 'Acid cushion' % above, which")
+    L("                   is Acid Credit / |TC| for the generic benchmark smelter. Not directly comparable")
+    L("                   number-for-number; both point the same direction (narrowing), which is the read.")
     acid_src = b["acid_price_source"]
-    L("  Regional acid:   " + "; ".join(
+    L(f"  Regional acid:   (as of {b['acid_price_source_reference_date']}, the regional benchmark's own "
+      f"latest print -- domestic TC/acid series is newer, {b['domestic_series_latest_date']})")
+    L("                   " + "; ".join(
         f"{r.acid_price_source.replace('smm_', '').replace('_', ' ')} "
-        f"cushion {r.acid_cushion_ratio*100:.0f}%" for r in acid_src.itertuples()
+        f"acid/|TC| {r.acid_cushion_ratio*100:.0f}%" for r in acid_src.itertuples()
     ))
     L(f"  Sulphur:         China H2SO4 exports collapsed "
       f"{cad.SULPHUR_TRADE_CONTEXT['china_h2so4_exports_may2026_kt']:.0f}kt (May) -> "
@@ -140,9 +146,10 @@ def render_monitor_text(result: dict) -> str:
     L("-" * 72)
     L("ROBUSTNESS (Model B -- does the reading survive a different source?)")
     L("-" * 72)
-    L("  Acid price source (same TC, different acid market):")
+    L(f"  Acid price source (same TC, different acid market, both snapshotted at "
+      f"{b['acid_price_source_reference_date']}):")
     for r in acid_src.itertuples():
-        L(f"    {r.acid_price_source:<22} ${r.acid_price_usd_t:>7.1f}/t  ->  cushion {r.acid_cushion_ratio*100:6.1f}%")
+        L(f"    {r.acid_price_source:<22} ${r.acid_price_usd_t:>7.1f}/t  ->  acid/|TC| {r.acid_cushion_ratio*100:6.1f}%")
     L(f"  {b['caveat']}")
     L("  TC index provider (same acid price, different TC source, nearest-date snapshot):")
     for r in b["tc_index_provider"].itertuples():

@@ -59,6 +59,24 @@ def load_calibrated_params(data_dir: str) -> tuple[SmelterParams, SmelterParams]
     """
     Load Nexa / Freeport filing CSVs from data_dir if present; otherwise fall
     back to filing-derived defaults shipped in those CSV files.
+
+    PROVENANCE FLAG (added 2026-09-25, nothing computed here changed): the
+    Freeport CSV's figures (data/freeport_copper_byproducts.csv) look like
+    genuine transcribed 10-K figures -- not round, differ year to year. The
+    Nexa CSV (data/nexa_zinc_byproducts.csv) does NOT clear that bar: in
+    BOTH years it carries, `sulfuric_acid_production_kt` is set EXACTLY
+    equal to `concentrate_processed_kt` (4,200 = 4,200 in 2024; 4,100 =
+    4,100 in 2025), which forces acid_yield = 1.000 t acid/t concentrate --
+    precisely equal to the independent, differently-sourced AusIMM-based
+    rule-of-thumb already used elsewhere for DEFAULT_ZN_PARAMS.acid_yield
+    (see model_a.py). Two independently-derived company-specific figures
+    landing on the exact same round number is the signature of a filler
+    fixture that never got replaced with Nexa's real 20-F/6-K figures, not
+    of independent confirmation. The zinc half of this function's return
+    value is UNVERIFIED for that reason -- it is not currently used to
+    inform any headline output (model_c.py only reads the copper half),
+    but do not start using it for zinc without first replacing this CSV
+    with real transcribed Nexa filing figures.
     """
     from data_loaders import load_company_filing_byproducts
 
@@ -68,17 +86,24 @@ def load_calibrated_params(data_dir: str) -> tuple[SmelterParams, SmelterParams]
     cu_df = load_company_filing_byproducts(cu_path, "Freeport")
     zn_row = zn_df.sort_values("period").iloc[-1]
     cu_row = cu_df.sort_values("period").iloc[-1]
+    if float(zn_row["sulfuric_acid_production_kt"]) == float(zn_row["concentrate_processed_kt"]):
+        print(
+            "WARNING: nexa_zinc_byproducts.csv gives acid_yield == 1.000 exactly "
+            "(sulfuric_acid_production_kt == concentrate_processed_kt) -- this is "
+            "the known-unverified placeholder flagged in this function's "
+            "docstring, not confirmed Nexa filing data."
+        )
     return params_from_filing_row(zn_row, "zn"), params_from_filing_row(cu_row, "cu")
 
 
 def acid_star_sanity(
-    params: SmelterParams,
-    metal_price: float,
-    tc: float,
-    energy_price: float,
-    silver_price: float = 0.0,
-    gold_price: float = 0.0,
-    acid_bounds=(-6000.0, 6000.0),
+        params: SmelterParams,
+        metal_price: float,
+        tc: float,
+        energy_price: float,
+        silver_price: float = 0.0,
+        gold_price: float = 0.0,
+        acid_bounds=(-6000.0, 6000.0),
 ) -> dict:
     """Report whether Acid* sits inside the observed acid band (calibration flag)."""
     acid_star = curtailment_threshold(
@@ -99,9 +124,9 @@ def acid_star_sanity(
 
 
 def sanity_table_for_df(
-    params: SmelterParams,
-    df: pd.DataFrame,
-    metal_prefix: str,
+        params: SmelterParams,
+        df: pd.DataFrame,
+        metal_prefix: str,
 ) -> pd.DataFrame:
     """One row per quarter: Acid* and calibration flag."""
     rows = []
