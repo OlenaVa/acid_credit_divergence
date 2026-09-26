@@ -44,7 +44,7 @@ formula changed, only which outputs are treated as the headline result.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 import numpy as np
 import pandas as pd
@@ -76,15 +76,15 @@ class SmelterParams:
         return metal_price * self.metal_grade * self.payable_fraction
 
     def byproduct_revenue(
-        self,
-        acid_price: pd.Series | float,
-        silver_price: pd.Series | float = 0.0,
-        gold_price: pd.Series | float = 0.0,
+            self,
+            acid_price: pd.Series | float,
+            silver_price: pd.Series | float = 0.0,
+            gold_price: pd.Series | float = 0.0,
     ) -> pd.Series | float:
         return (
-            self.acid_yield * acid_price
-            + self.silver_yield_oz * silver_price
-            + self.gold_yield_oz * gold_price
+                self.acid_yield * acid_price
+                + self.silver_yield_oz * silver_price
+                + self.gold_yield_oz * gold_price
         )
 
     def energy_cost(self, energy_price: pd.Series | float) -> pd.Series | float:
@@ -92,13 +92,13 @@ class SmelterParams:
 
 
 def smelter_margin(
-    params: SmelterParams,
-    metal_price,
-    tc,                     # $/t concentrate, sign convention: POSITIVE = smelter is PAID (normal regime)
-    acid_price,
-    energy_price,
-    silver_price=0.0,
-    gold_price=0.0,
+        params: SmelterParams,
+        metal_price,
+        tc,                     # $/t concentrate, sign convention: POSITIVE = smelter is PAID (normal regime)
+        acid_price,
+        energy_price,
+        silver_price=0.0,
+        gold_price=0.0,
 ) -> pd.Series | float:
     """
     SM = MetalRevenue + ByproductRevenue + TCBenefit + Premium
@@ -115,12 +115,12 @@ def smelter_margin(
     energy_cost = params.energy_cost(energy_price)
 
     return (
-        metal_rev
-        + byprod_rev
-        + tc_benefit
-        + params.premium
-        - energy_cost
-        - params.conversion_cost
+            metal_rev
+            + byprod_rev
+            + tc_benefit
+            + params.premium
+            - energy_cost
+            - params.conversion_cost
     )
 
 
@@ -171,13 +171,13 @@ def empirical_acid_sensitivity(sm_series: pd.Series, acid_price_series: pd.Serie
 
 
 def curtailment_threshold(
-    params: SmelterParams,
-    metal_price,
-    tc,
-    energy_price,
-    silver_price=0.0,
-    gold_price=0.0,
-    acid_bounds=(-6000.0, 6000.0),
+        params: SmelterParams,
+        metal_price,
+        tc,
+        energy_price,
+        silver_price=0.0,
+        gold_price=0.0,
+        acid_bounds=(-6000.0, 6000.0),
 ) -> Optional[float]:
     """
     Solve SM(acid_price) = 0 for acid_price, holding everything else fixed
@@ -261,9 +261,9 @@ def _selfcheck_threshold_gap_sign() -> None:
     threshold_gap correctly reports a POSITIVE gap when the fragile one is
     passed first. Run directly: `python margin_model.py`."""
     resilient = SmelterParams(metal_grade=0.5, payable_fraction=0.85, acid_yield=0.5,
-                               conversion_cost=200.0, premium=0.0)
+                              conversion_cost=200.0, premium=0.0)
     fragile = SmelterParams(metal_grade=0.5, payable_fraction=0.85, acid_yield=0.5,
-                             conversion_cost=200.0, premium=0.0)
+                            conversion_cost=200.0, premium=0.0)
     # 'resilient' gets a high metal price and a positive TC (big non-acid
     # margin); 'fragile' gets a much lower metal price and a negative TC
     # (thin non-acid margin) -- acid_yield is identical for both, so any
@@ -304,9 +304,9 @@ def bridge_rows_from_df(df: pd.DataFrame, metal_prefix: str, date_start, date_en
 
 
 def margin_bridge(
-    params: SmelterParams,
-    row_start: pd.Series,
-    row_end: pd.Series,
+        params: SmelterParams,
+        row_start: pd.Series,
+        row_end: pd.Series,
 ) -> dict:
     """
     Exact additive decomposition of the CHANGE in smelter margin between
@@ -349,9 +349,9 @@ def margin_bridge(
 
     # cross-check against directly recomputing the margin at both points
     sm_start = smelter_margin(params, row_start["metal_price"], row_start["tc"], row_start["acid_price"],
-                               row_start["energy_price"], get(row_start, "silver_price"), get(row_start, "gold_price"))
+                              row_start["energy_price"], get(row_start, "silver_price"), get(row_start, "gold_price"))
     sm_end = smelter_margin(params, row_end["metal_price"], row_end["tc"], row_end["acid_price"],
-                             row_end["energy_price"], get(row_end, "silver_price"), get(row_end, "gold_price"))
+                            row_end["energy_price"], get(row_end, "silver_price"), get(row_end, "gold_price"))
     contributions["_check_direct_delta"] = sm_end - sm_start
     return contributions
 
@@ -407,9 +407,9 @@ def free_metal_revenue(params: SmelterParams, metal_price: pd.Series | float) ->
 
 
 def treatment_margin(
-    params: SmelterParams,
-    metal_price, tc, acid_price, energy_price,
-    silver_price=0.0, gold_price=0.0,
+        params: SmelterParams,
+        metal_price, tc, acid_price, energy_price,
+        silver_price=0.0, gold_price=0.0,
 ) -> pd.Series | float:
     """
     The CUSTOM-SMELTER (tolling) reading of smelter economics -- TC + free
@@ -486,9 +486,9 @@ def cushion_loss(cushion_ratio_series: pd.Series, periods: int = 1) -> pd.Series
 
 
 def residual_margin(
-    params: SmelterParams,
-    metal_price, tc, acid_price, energy_price,
-    silver_price=0.0, gold_price=0.0,
+        params: SmelterParams,
+        metal_price, tc, acid_price, energy_price,
+        silver_price=0.0, gold_price=0.0,
 ) -> dict:
     """
     Splits TREATMENT margin (see treatment_margin() above -- TC + free
@@ -533,10 +533,10 @@ def residual_margin(
 
 
 def acid_stress_test(
-    params: SmelterParams,
-    metal_price, tc, acid_price, energy_price,
-    shocks=(0.0, -0.10, -0.20, -0.30),
-    silver_price=0.0, gold_price=0.0,
+        params: SmelterParams,
+        metal_price, tc, acid_price, energy_price,
+        shocks=(0.0, -0.10, -0.20, -0.30),
+        silver_price=0.0, gold_price=0.0,
 ) -> pd.DataFrame:
     """
     Recompute total margin, margin_ex_acid and the Acid Cushion Ratio under
@@ -563,11 +563,62 @@ def acid_stress_test(
     return pd.DataFrame(rows)
 
 
+def acid_yield_sensitivity(
+        params: SmelterParams,
+        metal_price, tc, acid_price, energy_price,
+        acid_yields: Optional[tuple] = None,
+        silver_price=0.0, gold_price=0.0,
+) -> pd.DataFrame:
+    """
+    Recompute total margin, margin_ex_acid and the Acid Cushion Ratio
+    across a range of `acid_yield` values, holding TC/acid price/metal
+    price/everything else fixed at the single snapshot passed in -- same
+    "flex one input, hold the rest" convention as `acid_stress_test()` and
+    `energy_stress_test()` just above/below this function.
+
+    Added 2026-09-26 (external review point 4). The headline Acid Cushion
+    Ratio and acid-credit dollar figure are DIRECTLY proportional to
+    `params.acid_yield` (acid_contribution = acid_yield * acid_price), and
+    `DEFAULT_CU_PARAMS.acid_yield = 0.83` is itself a single point
+    estimate, not a settled constant. It sits close to, but not exactly
+    at, the Freeport-implied figure (~0.828, from 680kt acid / 821kt
+    concentrate processed, FY2025 10-K -- see `data/
+    freeport_copper_byproducts.csv`) and inside the wider "3.0-3.5 t
+    acid / t copper metal" industry range this project also cites
+    (`model_a.py`'s `DEFAULT_CU_PARAMS` comment), which at
+    `metal_grade=0.255` implies a per-concentrate-tonne range of roughly
+    0.765 to 0.8925. This function exists to answer directly: how much of
+    the "68.2% cushion ratio, down from 94.3%" finding depends on exactly
+    where in that range the true figure sits, rather than leaving that as
+    an unquantified caveat.
+
+    Default range, if `acid_yields` is not given: the low end, the
+    current default, and the high end of that cited industry range --
+    (0.765, 0.83, 0.8925).
+    """
+    if acid_yields is None:
+        acid_yields = (0.765, 0.83, 0.8925)
+    rows = []
+    for y in acid_yields:
+        shocked_params = replace(params, acid_yield=y)
+        res = residual_margin(shocked_params, metal_price, tc, acid_price, energy_price,
+                              silver_price, gold_price)
+        acid_rev = acid_revenue_only(shocked_params, acid_price)
+        rows.append({
+            "acid_yield": y,
+            "acid_contribution": res["acid_contribution"],
+            "margin_ex_acid": res["margin_ex_acid"],
+            "total_margin": res["total_margin"],
+            "acid_cushion_ratio": acid_cushion_ratio(acid_rev, tc),
+        })
+    return pd.DataFrame(rows)
+
+
 def implied_acid_yield_and_buffer(
-    acid_credit_per_unit: float,
-    opex_per_unit: float,
-    realized_acid_price_per_t: float,
-    at_price: Optional[float] = None,
+        acid_credit_per_unit: float,
+        opex_per_unit: float,
+        realized_acid_price_per_t: float,
+        at_price: Optional[float] = None,
 ) -> dict:
     """
     Dimension-GENERAL version of the Acid* / curtailment-threshold idea,
@@ -626,10 +677,10 @@ def implied_acid_yield_and_buffer(
 
 
 def energy_stress_test(
-    params: SmelterParams,
-    metal_price, tc, acid_price, energy_price,
-    shocks=(0.0, 0.05, 0.10, 0.20),
-    silver_price=0.0, gold_price=0.0,
+        params: SmelterParams,
+        metal_price, tc, acid_price, energy_price,
+        shocks=(0.0, 0.05, 0.10, 0.20),
+        silver_price=0.0, gold_price=0.0,
 ) -> pd.DataFrame:
     """
     Recompute the margin under +5% / +10% / +20% conversion-cost & energy
@@ -640,7 +691,7 @@ def energy_stress_test(
     rows = []
     for s in shocks:
         p = SmelterParams(**{**params.__dict__, "conversion_cost": params.conversion_cost * (1 + s),
-                              "energy_per_t": params.energy_per_t * (1 + s)})
+                             "energy_per_t": params.energy_per_t * (1 + s)})
         sm = smelter_margin(p, metal_price, tc, acid_price, energy_price, silver_price, gold_price)
         rows.append({"cost_shock": s, "margin": sm})
     return pd.DataFrame(rows)
@@ -652,8 +703,8 @@ def _selfcheck_residual_margin_additivity() -> None:
     acid_stress_test()'s per-row split satisfies the same identity at
     every shock level. Run directly: `python margin_model.py`."""
     p = SmelterParams(metal_grade=0.255, payable_fraction=0.96, acid_yield=0.83,
-                       silver_yield_oz=0.05, gold_yield_oz=0.002, conversion_cost=260.0,
-                       energy_per_t=0.40, premium=20.0)
+                      silver_yield_oz=0.05, gold_yield_oz=0.002, conversion_cost=260.0,
+                      energy_per_t=0.40, premium=20.0)
     res = residual_margin(p, metal_price=9500, tc=-200, acid_price=227.7, energy_price=70)
     diff = abs(res["margin_ex_acid"] + res["acid_contribution"] - res["total_margin"])
     assert diff < 1e-9, f"residual_margin additivity broken: off by {diff}"

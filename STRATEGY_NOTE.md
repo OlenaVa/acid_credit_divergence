@@ -84,7 +84,10 @@ cited weekly data. **Updated 2026-09-25** with three new real weekly
 prints (2026-09-11, 09-18, 09-24) that were not yet available at the
 2026-09-04/16 pass — the numbers below replace that snapshot; see this
 note's own changelog at the bottom for the before/after and for the two
-code bugs that extending the data exposed and fixed.
+code bugs that extending the data exposed and fixed. The same run also
+writes `output/copper_acid_cushion.png` (added 2026-09-26) — a real-data
+chart of TC vs acid price and the Acid Cushion Ratio over time, the
+clearest single picture of the finding below.
 
 | Metric | Value (2026-09-24) | Value (2026-09-04, for comparison) |
 |---|---|---|
@@ -129,6 +132,22 @@ its deficit) is the single most-changed fact in this update.
   because BOTH legs are now moving against the smelter, not because
   acid alone fell. Don't attribute this move to acid alone.
 
+**On the reference points these figures compare against, not just
+"today" (added 2026-09-26):** the "today" side of every figure above is
+always a genuine SMM print — structurally guaranteed, and covered by a
+regression test (`copper_acid_data._selfcheck_grid_never_drops_latest_
+point()`). The OTHER end of a comparison is not automatically that: the
+9-week figures' reference date, 2026-07-24, has no direct SMM print for
+either TC or acid and is interpolated between the nearest real citations
+on either side — the 1-month, 3-month and 13-week figures all land on
+real cited prints instead. That does not make the 9-week figures wrong
+(interpolating an already-elapsed, closed historical gap for a trend
+comparison is standard practice, not a look-ahead problem — see
+`copper_acid_data._interpolate_to_grid()`'s docstring for the full
+reasoning), but it's now disclosed rather than implicit: `model_a.py`
+returns a `trend_basis` dict alongside `trend`, and the monitor marks the
+affected lines with `*`.
+
 **Stress test (acid price shock, TC and copper price held at the latest
 snapshot):**
 
@@ -149,6 +168,28 @@ moving in the smelter's favor either). This is a stress test, not a
 forecast: it deliberately does not model TC and acid moving together,
 even though in practice they may (see "What would move this thesis,"
 below).
+
+**Acid-yield sensitivity, added 2026-09-26 (TC/acid/metal price held at
+the latest snapshot; `acid_yield` flexed across the full cited range):**
+
+| `acid_yield` | Total treatment margin | Cushion ratio |
+|---|---|---|
+| 0.765 (industry range, low end) | -$198/t | 62.9% |
+| 0.83 (current default, ≈Freeport-implied) | -$186/t | 68.2% |
+| 0.8925 (industry range, high end) | -$174/t | 73.3% |
+
+The headline Acid Cushion Ratio is directly proportional to
+`DEFAULT_CU_PARAMS.acid_yield`, which is itself a single point estimate
+(close to, not identical to, Freeport's own implied figure of ~0.828 —
+see "A real modeling gap," below) inside a wider cited industry range.
+This table answers directly how much of the "68.2%, down from 94.3%"
+finding depends on exactly where in that range the true figure sits: not
+much, in the sense that matters — the cushion ratio moves by roughly 5
+points either side of the default across the ENTIRE cited range, nowhere
+close to enough to challenge the qualitative finding (a 26-point collapse
+from three weeks earlier). Read this as "the assumption isn't
+load-bearing for the direction of the thesis," not as "the assumption is
+precisely known" — it still isn't.
 
 ## The Thesis Dashboard
 
@@ -344,8 +385,8 @@ payable_fraction` sliver only) + byproducts − costs — specifically for
 the acid-cushion metrics above, while leaving the original
 `smelter_margin()` untouched for the Kamoa-style integrated case and the
 unchanged zinc-vs-copper secondary path. See `margin_model.py`'s
-`treatment_margin()` docstring and README.md's changelog point 4 for the
-full account, including a runnable self-check
+`treatment_margin()` docstring and README.md's 2026-09-16 changelog point
+4 for the full account, including a runnable self-check
 (`_selfcheck_residual_margin_additivity()`, `python margin_model.py`)
 proving the margin-ex-acid / acid-contribution split is exact.
 
@@ -869,3 +910,41 @@ what this project actually is — a strategist's research note, not a
 production trading-desk data platform — and would have required
 fabricating inputs (freight, VAT, utilization-elasticity coefficients)
 this project has no public source for.
+
+## Changelog — 2026-09-26
+
+A third review pass against five specific follow-up points on the
+2026-09-25 fixes above, plus a separate, directly-raised gap in the
+project's chart outputs. Full technical detail is in README.md's own
+2026-09-26 changelog; summary of what changed in THIS document:
+
+- **Acid-yield sensitivity table added** to "The current read," above —
+  the headline Acid Cushion Ratio (68.2%) moves between 62.9% and 73.3%
+  across the full cited plausible range of `acid_yield` (0.765-0.8925);
+  the qualitative finding (a 26-point collapse from three weeks earlier)
+  is not sensitive to this specific assumption. Previously this was an
+  unquantified caveat, not a measured answer.
+- **The 9-week trend figures' reference point (2026-07-24) is disclosed
+  as interpolated, not cited** — the 1-month/3-month/13-week figures'
+  reference points are all real prints; only the 9-week ones weren't
+  flagged either way before this pass.
+- **A real, previously-unguaranteed vintage-safety gap in
+  `copper_acid_data._interpolate_to_grid()` fixed**: the 2026-09-25
+  fix's off-grid snap used `nearest`, which could in principle (never
+  actually triggered by this file's real data) pull a citation dated
+  AFTER a grid label backward onto that earlier label. Replaced with
+  backward-only ("last observation dated <= this date") alignment, with
+  a regression test constructing the failure case synthetically. This
+  is a code-correctness fix with no effect on any number printed in this
+  note — the underlying data never exercised the bug.
+- **A real-data chart added**: `output/copper_acid_cushion.png` (TC vs
+  acid price, and the Acid Cushion Ratio, both over the real weekly
+  grid), regenerated automatically on every `acid_cushion_monitor.py`
+  run. Before this, every chart in the project was `demo.py`'s
+  deliberately synthetic pair — real, honestly labelled, but the only
+  visual artifact a reviewer had to look at. `demo.py` itself was not
+  changed to use real data (it exists specifically as a zero-dependency
+  smoke test and should keep doing that job); its chart TITLES were
+  fixed instead, since only one of three previously said "synthetic" —
+  see README.md's changelog for the full reasoning on why converting
+  `demo.py` itself would have been the wrong fix.

@@ -33,7 +33,7 @@ from margin_model import (
     SmelterParams, smelter_margin, acid_sensitivity,
     relative_acid_sensitivity, curtailment_threshold,
     acid_revenue_only, acid_cushion_ratio, cushion_loss,
-    residual_margin, acid_stress_test,
+    residual_margin, acid_stress_test, acid_yield_sensitivity,
 )
 from thesis_monitor import MonitorConfig, build_monitor
 
@@ -117,6 +117,26 @@ def _pct_change_over(series: pd.Series, weeks: int) -> float:
     return series.iloc[-1] / series.iloc[-1 - weeks] - 1
 
 
+def _status_at(status_series: pd.Series, weeks: int) -> str:
+    """Status ('cited' / 'cited-approx' / 'interpolated (grid-fill)') of
+    the comparison point `weeks` steps back -- added 2026-09-26 (external
+    review point 3). The LATEST point in every trend metric below is
+    always 'cited' (see copper_acid_data.py's own self-check), but the
+    OTHER end of a %/level change is not guaranteed to be -- e.g. the
+    2026-07-24 point used for every current 9-week comparison is
+    'interpolated (grid-fill)' for both TC and acid (no SMM print landed
+    exactly on that Friday). That does not make the 9-week figures wrong
+    -- interpolating a genuinely elapsed historical gap for a trend
+    comparison is standard practice, not a look-ahead problem (see
+    `_interpolate_to_grid()`'s docstring in copper_acid_data.py) -- but a
+    reader should be able to tell which end of the comparison is a real
+    print and which is a smoothed estimate, rather than both implicitly
+    reading as equally solid."""
+    if len(status_series) <= weeks:
+        return "n/a"
+    return status_series.iloc[-1 - weeks]
+
+
 def _level_change_over(series: pd.Series, weeks: int) -> float:
     """Level (not %) change over `weeks` steps -- used for the Acid
     Cushion Ratio panel, which is already a ratio and reads more naturally
@@ -127,9 +147,9 @@ def _level_change_over(series: pd.Series, weeks: int) -> float:
 
 
 def run_model_a_copper_acid_cushion(
-    cu_params: SmelterParams = DEFAULT_CU_PARAMS,
-    energy_price_usd_mwh: float = ENERGY_PRICE_USD_MWH,
-    metal_prices_path: str = "data/metal_prices.csv",
+        cu_params: SmelterParams = DEFAULT_CU_PARAMS,
+        energy_price_usd_mwh: float = ENERGY_PRICE_USD_MWH,
+        metal_prices_path: str = "data/metal_prices.csv",
 ) -> dict:
     """
     THE core analysis, per the 2026-09-16 review: copper only, real weekly
@@ -208,6 +228,10 @@ def run_model_a_copper_acid_cushion(
         energy_price_usd_mwh, shocks=(0.0, -0.10, -0.20, -0.30),
         silver_price=latest["silver_price"],
     )
+    yield_sensitivity = acid_yield_sensitivity(
+        cu_params, latest["cu_price"], latest["tc_usd_dmt"], latest["acid_usd_t"],
+        energy_price_usd_mwh, silver_price=latest["silver_price"],
+    )
 
     trend = {
         "acid_price_1m_pct": _pct_change_over(weekly["acid_usd_t"], 4),
@@ -222,19 +246,38 @@ def run_model_a_copper_acid_cushion(
         "tc_1m_usd_dmt_change": _level_change_over(weekly["tc_usd_dmt"], 4),
         "tc_9w_usd_dmt_change": _level_change_over(weekly["tc_usd_dmt"], 9),
     }
+    # Basis of the REFERENCE point ("weeks ago") for each trend figure
+    # above -- see _status_at()'s docstring. The latest point is always
+    # "cited" for every metric (that property is what copper_acid_data.py's
+    # own self-check enforces), so only the older end needs disclosing.
+    trend_basis = {
+        "acid_price_1m_pct": _status_at(weekly["acid_status"], 4),
+        "acid_price_3m_pct": _status_at(weekly["acid_status"], 13),
+        "acid_price_9w_pct": _status_at(weekly["acid_status"], 9),
+        "cushion_9w_ppt": (_status_at(weekly["acid_status"], 9), _status_at(weekly["tc_status"], 9)),
+        "cushion_13w_ppt": (_status_at(weekly["acid_status"], 13), _status_at(weekly["tc_status"], 13)),
+        "tc_1m_usd_dmt_change": _status_at(weekly["tc_status"], 4),
+        "tc_9w_usd_dmt_change": _status_at(weekly["tc_status"], 9),
+    }
     provenance_note = (
         "9W/13W trend figures compare the latest CITED week against a "
-        "reference week that may itself be interpolated (see the "
-        "`weekly` DataFrame's tc_status/acid_status columns for the exact "
-        "provenance of every week used) -- the direction and rough "
-        "magnitude are meaningful, the last significant figure is not."
+        "reference week that may itself be interpolated -- see "
+        "`trend_basis` above for exactly which figures that applies to "
+        "right now (as of 2026-09-24/25, it's the 9-week figures "
+        "specifically: their reference point, 2026-07-24, has no direct "
+        "SMM print and is 'interpolated (grid-fill)' for both TC and "
+        "acid; the 1-month and 3-month figures both land on real cited "
+        "prints) -- the direction and rough magnitude are meaningful, the "
+        "last significant figure is not."
     )
 
     return {
         "weekly": weekly,
         "latest": latest,
         "stress": stress,
+        "yield_sensitivity": yield_sensitivity,
         "trend": trend,
+        "trend_basis": trend_basis,
         "provenance_note": provenance_note,
         "params": cu_params,
         "energy_price_usd_mwh": energy_price_usd_mwh,
@@ -242,10 +285,10 @@ def run_model_a_copper_acid_cushion(
 
 
 def run_model_a(
-    df: pd.DataFrame,
-    zn_params: SmelterParams = DEFAULT_ZN_PARAMS,
-    cu_params: SmelterParams = DEFAULT_CU_PARAMS,
-    monitor_cfg: MonitorConfig = MonitorConfig(),
+        df: pd.DataFrame,
+        zn_params: SmelterParams = DEFAULT_ZN_PARAMS,
+        cu_params: SmelterParams = DEFAULT_CU_PARAMS,
+        monitor_cfg: MonitorConfig = MonitorConfig(),
 ) -> dict:
     """SECONDARY / cross-metal confirmation only (see module docstring).
     Returns a dict with the full margin/threshold/monitoring time series
@@ -253,9 +296,9 @@ def run_model_a(
     handed straight to model_b/model_c for robustness/validation."""
 
     sm_zn = smelter_margin(zn_params, df["zn_price"], df["zn_tc"], df["acid_price"],
-                            df["energy_price"], silver_price=df.get("silver_price", 0.0))
+                           df["energy_price"], silver_price=df.get("silver_price", 0.0))
     sm_cu = smelter_margin(cu_params, df["cu_price"], df["cu_tc"], df["acid_price"],
-                            df["energy_price"], silver_price=df.get("silver_price", 0.0))
+                           df["energy_price"], silver_price=df.get("silver_price", 0.0))
 
     sens_zn = acid_sensitivity(zn_params)
     sens_cu = acid_sensitivity(cu_params)
@@ -263,12 +306,12 @@ def run_model_a(
 
     acid_star_zn = df.apply(
         lambda r: curtailment_threshold(zn_params, r["zn_price"], r["zn_tc"], r["energy_price"],
-                                         silver_price=r.get("silver_price", 0.0)),
+                                        silver_price=r.get("silver_price", 0.0)),
         axis=1,
     )
     acid_star_cu = df.apply(
         lambda r: curtailment_threshold(cu_params, r["cu_price"], r["cu_tc"], r["energy_price"],
-                                         silver_price=r.get("silver_price", 0.0)),
+                                        silver_price=r.get("silver_price", 0.0)),
         axis=1,
     )
     gap = acid_star_zn - acid_star_cu
@@ -287,4 +330,3 @@ def run_model_a(
         "threshold_gap": gap,
         "monitor": monitor,
     }
-

@@ -16,6 +16,13 @@ This is the project's PRIMARY output now (see the changelog below for
 why): the "Copper Acid Cushion Monitor," built entirely from real, cited
 weekly SMM data through **2026-09-24** (updated 2026-09-25 — see that
 changelog entry below for what moved), no synthetic fixture involved.
+Also writes `output/copper_acid_cushion.png` — a two-panel chart (TC vs
+acid price; Acid Cushion Ratio over time) built from the same real data,
+regenerated on every run. This is the only real-data chart in the
+project; `demo.py`'s `demo_margins.png`/`demo_monitor.png` are a
+SEPARATE, deliberately synthetic pipeline smoke test (see that file's own
+docstring) and are now unmistakably labelled as such on every panel —
+see the 2026-09-26 changelog entry below for why that needed fixing.
 
 This is **not** a systematic trading strategy. There is no backtest,
 Sharpe ratio, or walk-forward evaluation anywhere in this project, on
@@ -46,6 +53,107 @@ Anything not in this table (freight, handling, storage, VAT treatment on
 the SMM acid index, or a specific smelter's actual realized contract
 terms as opposed to the SMM benchmark index) is a genuine gap this
 project does not fabricate a number for — see "Known limitations" below.
+
+## Changelog — 2026-09-26: vintage-logic hardening, sensitivity, and honest charts
+
+A third review pass, prompted by five specific follow-up points against
+the 2026-09-25 fixes above. All five were assessed on their merits before
+being adopted — two turned out to already be resolved or only partly
+applicable; the rest identified real, previously-unaddressed gaps.
+
+1. **`_interpolate_to_grid()`'s off-grid snap could, in principle, pull a
+   citation dated AFTER a grid label backward onto that earlier label.**
+   The 2026-09-25 fix used `.reindex(..., method="nearest", tolerance=
+   "3D")`, which snaps to whichever grid date is numerically closer —
+   including a LATER grid date's citation onto an EARLIER label, if
+   that's the closer one. Concretely: a citation dated Saturday
+   2026-09-19 sits 1 day from the 2026-09-18 grid Friday and 6 days from
+   2026-09-25 — "nearest" would have displayed it AT 2026-09-18, before
+   that number existed. Every citation this file actually ships is dated
+   on/before its own grid Friday, so this was never triggered in
+   practice, but nothing guaranteed it couldn't be. Fixed by replacing
+   "nearest" with `pd.merge_asof(..., direction="backward")`: a grid date
+   is now assigned the most recent citation dated <= itself (within 3
+   days), full stop — never a later one, at any distance. Regression-
+   tested (`_selfcheck_no_future_observation_leaks_backward()` in
+   `copper_acid_data.py`, constructing exactly the Sept-19 case above and
+   asserting it can't leak backward). Genuine multi-week gaps (no
+   citation within reach on either side) still fall back to
+   time-interpolation between the nearest past and future real citations
+   — unaffected, and still correct: that's smoothing an already-elapsed
+   historical window for charting, not a live decision point (only
+   `weekly.iloc[-1]`, always genuinely "cited", is used that way — see
+   the function's docstring for the full reasoning).
+2. **Model B's April-TC-vs-September-inputs mixing — already fixed and
+   labelled on 2026-09-25**, not a new issue. Confirmed still correct:
+   `run_model_b_acid_robustness()`'s `tc_index_provider` margin columns
+   explicitly hold today's `cu_price`/`acid_usd_t` fixed and flex only
+   TC, and both the docstring AND the runtime `caveat` string returned to
+   callers say so ("a stress-test illustration, not a reconstruction of
+   April's actual margin") — this was already visible in the printed
+   monitor output, not just in source comments.
+3. **Trend figures didn't disclose when their OWN reference point (not
+   just "today") was itself interpolated rather than cited.** The
+   "today" reading was already guaranteed real (structurally — the grid
+   never extends past the last real citation, and this is what point 1's
+   regression test enforces), but e.g. the 9-week trend's comparison
+   date (2026-07-24) has no direct SMM print and is genuinely
+   interpolated for both TC and acid — this wasn't flagged anywhere a
+   reader would see it. `model_a.py`'s `run_model_a_copper_acid_cushion()`
+   now returns a `trend_basis` dict alongside `trend`, reporting the
+   status of each metric's reference point; `acid_cushion_monitor.py`'s
+   printed output now marks the affected lines with `*` and states which
+   status applies. As of this data: 1-month, 3-month and 13-week
+   reference points are all real cited prints; only the 9-week ones
+   aren't.
+4. **No sensitivity check existed on `acid_yield` itself**, despite the
+   headline Acid Cushion Ratio being directly proportional to it.
+   `DEFAULT_CU_PARAMS.acid_yield = 0.83` is a point estimate (close to,
+   not identical to, the Freeport-implied ~0.828), sitting inside the
+   wider cited industry range of 0.765-0.8925 (3.0-3.5 t acid/t copper
+   metal). Added `margin_model.acid_yield_sensitivity()` (same "flex one
+   input, hold the rest" convention as `acid_stress_test()`/
+   `energy_stress_test()`), wired into `model_a.py`'s output, printed in
+   the monitor, and saved to `output/copper_acid_cushion_yield_
+   sensitivity.csv`. Result: across the full cited range, the cushion
+   ratio moves from 62.9% to 73.3% (vs. 68.2% at the current default) —
+   meaningful, but nowhere near enough to change the qualitative finding
+   (cushion collapsing from 94.3% three weeks earlier). This is now a
+   measured answer, not an unquantified caveat.
+5. **Regression tests added for all of the above**, in this project's
+   existing runnable-self-check style (no pytest — see the 2026-09-25
+   entry for why that stays a deliberate choice): `copper_acid_data.py`
+   gained `_selfcheck_no_future_observation_leaks_backward()` (point 1)
+   and `_selfcheck_vintage_alignment_model_b()` (confirms Model B's
+   three acid-price-source rows all draw from the exact same dated row —
+   guards against point 2's bug ever being reintroduced), alongside the
+   pre-existing `_selfcheck_grid_never_drops_latest_point()`. All three
+   run automatically via `python copper_acid_data.py`.
+
+**Separately, a real gap in the project's ONLY chart outputs, raised
+directly rather than as part of the five points above:** every chart in
+this project, before this pass, was `demo.py`'s deliberately synthetic
+pair — and only ONE of their three subplot titles actually said so
+("(synthetic demo data)" was on `demo_margins.png`'s top panel only; the
+bottom panel and all of `demo_monitor.png` carried no marking at all). A
+PNG travels on its own once opened from the output folder, independent
+of the console REMINDER or this file's prose — so a bare bottom-panel or
+`demo_monitor.png` image gave no visual sign it wasn't real. This is
+NOT a reason to make `demo.py` itself pull real data — it exists
+specifically as a zero-dependency, no-network smoke test proving the
+pipeline's plumbing works before touching real data files, and doing
+that job is what it should keep doing. Fixed two ways instead: (a) every
+subplot in `demo.py`'s output now says "SYNTHETIC" in its own title, plus
+a red whole-figure stamp ("SYNTHETIC DEMO DATA — NOT real market data —
+see demo.py") that survives even a partial crop; (b) `acid_cushion_
+monitor.py` gained an actual real-data chart (`plot_monitor()`, saved to
+`output/copper_acid_cushion.png`) — TC vs acid price, and the Acid
+Cushion Ratio, both over the real weekly grid, cited points marked with
+filled markers distinct from the (thinner) full interpolated line. It
+regenerates automatically on every run — no separate refresh step —
+because it's built directly from `copper_acid_data.py`'s live series, so
+adding a new week's citation there is the only thing that ever needs to
+happen for the chart to move.
 
 ## Changelog — 2026-09-25: data refresh, and two real bugs found
 
@@ -317,7 +425,7 @@ reading is NOT source-specific.
 - **`copper_acid_data.py`** — PRIMARY real-data module. See changelog
   point 1.
 - **`model_a.py`** — `run_model_a_copper_acid_cushion()` (PRIMARY, see
-  changelog point 3) + `run_model_a()` (secondary, zinc vs copper,
+  2026-09-16 changelog point 3) + `run_model_a()` (secondary, zinc vs copper,
   unchanged). `DEFAULT_CU_PARAMS`'s header comment records which fields
   are cited vs rule-of-thumb/invented.
 - **`model_b.py`** — `run_model_b_acid_robustness()` (PRIMARY) +
@@ -329,23 +437,27 @@ reading is NOT source-specific.
   Read the module docstring's UNIT-BASIS WARNING before touching Kamoa's
   $/lb figures — they are not on the same basis as `SmelterParams`.
 - **`thesis_dashboard.py`** — PRIMARY. 7-category Thesis Dashboard, see
-  changelog point 5.
+  2026-09-16 changelog point 5.
 - **`acid_cushion_monitor.py`** — PRIMARY entry point. Runs A → B → C →
   Dashboard on real data and renders the "Copper Acid Cushion Monitor"
   report; also writes `output/copper_acid_cushion_weekly.csv`,
-  `output/copper_acid_cushion_stress.csv`, `output/kamoa_kakula_
-  quarterly.csv`. Run directly: `python acid_cushion_monitor.py`.
+  `output/copper_acid_cushion_stress.csv`, `output/copper_acid_cushion_
+  yield_sensitivity.csv` (2026-09-26), `output/kamoa_kakula_
+  quarterly.csv`, and `output/copper_acid_cushion.png` (2026-09-26 — the
+  project's only real-data chart; see that changelog entry). Run
+  directly: `python acid_cushion_monitor.py`.
 - **`margin_model.py`** — `SmelterParams`, `smelter_margin()` (full,
   metal-inclusive — right basis for an integrated miner+smelter),
   `treatment_margin()`/`free_metal_revenue()` (TC-scale, custom-smelter
-  basis — see changelog point 4), `acid_sensitivity()`,
+  basis — see 2026-09-16 changelog point 4), `acid_sensitivity()`,
   `curtailment_threshold()` (root-finds Acid* where `smelter_margin` = 0),
   `threshold_gap()` (sign convention corrected 2025-09-15 — read its
   docstring before quoting a gap number in prose), `margin_bridge()`
   (exact linear decomposition of a `smelter_margin` CHANGE),
-  `empirical_acid_sensitivity()`, `energy_stress_test()`, and the new
-  PRIMARY-path functions from changelog point 2. Two runnable self-checks
-  at the bottom (`python margin_model.py`).
+  `empirical_acid_sensitivity()`, `energy_stress_test()`,
+  `acid_yield_sensitivity()` (2026-09-26), and the new PRIMARY-path
+  functions from 2026-09-16 changelog point 2. Runnable self-checks at the bottom
+  (`python margin_model.py`).
 - **`thesis_monitor.py`** — secondary/cross-metal. The five
   thesis-confirmation conditions for zinc vs copper, `build_monitor()`,
   `conditions_met_distribution()`, `narrative_summary()`. Unchanged; see
@@ -354,7 +466,7 @@ reading is NOT source-specific.
 - **`data_loaders.py`** — one loader per free source, plus (new)
   `load_daily_metal_prices()` for the primary pipeline's weekly-reindexed
   copper price. `load_fred_zinc()` and `load_real_metal_prices_quarterly()`
-  both now have real, verified data behind them (see changelog point 7).
+  both now have real, verified data behind them (see 2026-09-16 changelog point 7).
   The rest (World Bank Pink Sheet, USGS, ILZSG, ICSG, company filings,
   China Customs HS2807 export-proxy, regional acid quotes) each document
   the exact CSV schema and page to download from. None fetch data
@@ -362,7 +474,7 @@ reading is NOT source-specific.
 - **`smelter_calibration.py`** — unchanged. `load_calibrated_params()`
   now doubles as `model_c.py`'s Freeport cross-check source.
 - **`real_data_check.py`** — secondary/cross-metal real dataset. See
-  changelog points 6-7. Prints a provenance table every run — which of
+  2026-09-16 changelog points 6-7. Prints a provenance table every run — which of
   `zn_price`/`cu_price`/`silver_price` are real for which quarters, which
   quarters are missing manually-curated TC/acid figures, and event-window
   notes for known non-fundamental price shocks.
@@ -464,7 +576,7 @@ output).
   claim on today's numbers) but it is a real gap, not a solved input.
   `real_data_check.REAL_DATA` uses the same placeholder for 2026-Q1/Q3
   (previously NaN, which cascaded into the whole quarter's margin
-  figures being NaN — see changelog point 7).
+  figures being NaN — see 2026-09-16 changelog point 7).
 - **`treatment_margin()`'s absolute dollar level still inherits
   uncalibrated inputs** (`conversion_cost`, `premium`, the energy
   placeholder above) — the DIRECTION (deteriorating through 2026) and the

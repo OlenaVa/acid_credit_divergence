@@ -34,6 +34,9 @@ weeks are cited vs interpolated.
 from __future__ import annotations
 
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 import copper_acid_data as cad
 import model_a as ma
@@ -82,17 +85,30 @@ def render_monitor_text(result: dict) -> str:
     L(f"  Margin ex-acid     {_fmt_usd(latest['margin_ex_acid'])}/t  (treatment basis -- see README)")
     L(f"  Total margin       {_fmt_usd(latest['total_margin'])}/t  (treatment basis -- see README)")
     L("")
+    trend_basis = a["trend_basis"]
     L(f"  Acid price:   1M {_fmt_pct(trend['acid_price_1m_pct'])}   "
-      f"3M {_fmt_pct(trend['acid_price_3m_pct'])}   9W {_fmt_pct(trend['acid_price_9w_pct'])}")
+      f"3M {_fmt_pct(trend['acid_price_3m_pct'])}   "
+      f"9W {_fmt_pct(trend['acid_price_9w_pct'])}*")
     L(f"  TC level chg: 1M {_fmt_usd(trend['tc_1m_usd_dmt_change'])}/dmt   "
-      f"9W {_fmt_usd(trend['tc_9w_usd_dmt_change'])}/dmt")
-    L(f"  Cushion:      9W {trend['cushion_9w_ppt']*100:+.1f}pp   "
+      f"9W {_fmt_usd(trend['tc_9w_usd_dmt_change'])}/dmt*")
+    L(f"  Cushion:      9W {trend['cushion_9w_ppt']*100:+.1f}pp*   "
       f"13W {trend['cushion_13w_ppt']*100:+.1f}pp")
+    L(f"  *9W figures' reference point ({a['weekly'].index[-1 - 9].date()}) has no direct SMM print "
+      f"for TC/acid -- status: {trend_basis['tc_9w_usd_dmt_change']} / "
+      f"{trend_basis['acid_price_9w_pct']}. 1M/3M/13W reference points are all real cited prints.")
     L("")
     L("  Stress test (acid price shock, TC/metal price held at latest snapshot):")
     for _, row in stress.iterrows():
         L(f"    Acid {row['acid_shock_pct']*100:+.0f}%  ->  total margin {_fmt_usd(row['total_margin'])}/t "
           f"(cushion {row['acid_cushion_ratio']*100:.1f}%)")
+    L("")
+    yield_sens = a["yield_sensitivity"]
+    L(f"  Acid-yield sensitivity (TC/acid price/metal price held at latest snapshot; "
+      f"default acid_yield={a['params'].acid_yield}):")
+    for _, row in yield_sens.iterrows():
+        tag = " <- default" if abs(row["acid_yield"] - a["params"].acid_yield) < 1e-9 else ""
+        L(f"    acid_yield {row['acid_yield']:.4f}  ->  cushion {row['acid_cushion_ratio']*100:5.1f}%   "
+          f"total margin {_fmt_usd(row['total_margin'])}/t{tag}")
     L("")
     cushion_state = dash["dashboard"]["2_acid_cushion"]["state"]
     L(f"  STATUS: CUSHION {cushion_state}")
@@ -159,6 +175,78 @@ def render_monitor_text(result: dict) -> str:
     return "\n".join(lines)
 
 
+def plot_monitor(result: dict, out_path: str = "output/copper_acid_cushion.png") -> str:
+    """
+    REAL-data chart, added 2026-09-26. Before this, the only chart output
+    anywhere in this project was demo.py's SYNTHETIC pair
+    (demo_margins.png / demo_monitor.png) -- a real-data run had tables
+    and console text only. That's not a bug in demo.py (it's an
+    intentional, clearly-labelled, zero-dependency pipeline smoke test --
+    see its own docstring), but it meant every chart a reviewer could see
+    was fake, which is confusing on its own even with correct labels.
+    This is the fix: a real chart, built entirely from
+    `copper_acid_data.py`'s cited weekly series, that regenerates
+    automatically -- literally, just by running this file again -- every
+    time a new week's SMM print is added there. No separate "refresh
+    the chart" step exists or is needed.
+
+    Two panels:
+      1. TC (USD/dmt) and acid price (USD/t) over the full real weekly
+         grid.
+      2. Acid Cushion Ratio (%) over the same grid, with a 100% reference
+         line (acid credit fully offsetting TC).
+    In both, a THIN LINE runs through every grid point (cited AND
+    interpolated alike, for visual continuity), while filled MARKERS are
+    drawn only at points genuinely tagged "cited" / "cited-approx" --
+    exactly the observed-vs-interpolated distinction from this project's
+    2026-09-26 review pass (see model_a.py's `trend_basis`), made visible
+    rather than only readable in a status column.
+    """
+    weekly = result["model_a"]["weekly"]
+    latest_date = weekly.index[-1].date()
+    is_observed = weekly["tc_status"].isin(["cited", "cited-approx"])
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    fig.suptitle(
+        f"Copper acid-cushion thesis -- REAL SMM weekly data through {latest_date}",
+        fontsize=11, fontweight="bold",
+    )
+
+    ax1.plot(weekly.index, weekly["tc_usd_dmt"], color="tab:blue", lw=1.2, label="TC (USD/dmt)")
+    ax1.scatter(weekly.index[is_observed], weekly["tc_usd_dmt"][is_observed],
+                color="tab:blue", s=18, zorder=3, label="TC -- cited print")
+    ax1.axhline(0, color="grey", lw=0.8)
+    ax1.set_ylabel("TC, USD/dmt")
+    ax1_r = ax1.twinx()
+    ax1_r.plot(weekly.index, weekly["acid_usd_t"], color="tab:red", lw=1.2, label="Acid price (USD/t)")
+    ax1_r.scatter(weekly.index[is_observed], weekly["acid_usd_t"][is_observed],
+                  color="tab:red", s=18, zorder=3, marker="s", label="Acid -- cited print")
+    ax1_r.set_ylabel("Acid price, USD/t")
+    ax1.set_title("TC vs acid price (markers = real SMM print; line = incl. interpolated grid-fill weeks)")
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines1r, labels1r = ax1_r.get_legend_handles_labels()
+    # Attached to ax1_r (the twin axis), not ax1: twin axes stack ON TOP of
+    # the axis they were created from, so a legend attached to ax1 render
+    # BELOW ax1_r's own plotted lines and gets visually cut through by
+    # them. Attaching it to ax1_r instead puts the legend on top, as
+    # intended.
+    ax1_r.legend(lines1 + lines1r, labels1 + labels1r, loc="lower left",
+                 fontsize=7.5, framealpha=0.95, handlelength=1.5, labelspacing=0.4)
+
+    ax2.plot(weekly.index, weekly["acid_cushion_ratio"] * 100, color="tab:green", lw=1.2)
+    ax2.scatter(weekly.index[is_observed], weekly["acid_cushion_ratio"][is_observed] * 100,
+                color="tab:green", s=18, zorder=3, label="Cited print")
+    ax2.axhline(100, color="grey", lw=0.8, ls="--", label="100% (acid fully offsets TC)")
+    ax2.set_ylabel("Acid Cushion Ratio, %")
+    ax2.set_title("Acid Cushion Ratio = Acid Credit / |TC| over time")
+    ax2.legend(loc="lower left", fontsize=8)
+
+    plt.tight_layout(rect=(0, 0, 1, 0.96))
+    plt.savefig(out_path, dpi=130)
+    plt.close(fig)
+    return out_path
+
+
 if __name__ == "__main__":
     result = build_monitor()
     print(render_monitor_text(result))
@@ -167,6 +255,10 @@ if __name__ == "__main__":
     os.makedirs("output", exist_ok=True)
     result["model_a"]["weekly"].to_csv("output/copper_acid_cushion_weekly.csv")
     result["model_a"]["stress"].to_csv("output/copper_acid_cushion_stress.csv", index=False)
+    result["model_a"]["yield_sensitivity"].to_csv("output/copper_acid_cushion_yield_sensitivity.csv", index=False)
     result["model_c"]["kamoa_quarterly"].to_csv("output/kamoa_kakula_quarterly.csv")
+    chart_path = plot_monitor(result)
     print("\n[written: output/copper_acid_cushion_weekly.csv, "
-          "output/copper_acid_cushion_stress.csv, output/kamoa_kakula_quarterly.csv]")
+          "output/copper_acid_cushion_stress.csv, "
+          "output/copper_acid_cushion_yield_sensitivity.csv, "
+          f"output/kamoa_kakula_quarterly.csv, {chart_path}]")

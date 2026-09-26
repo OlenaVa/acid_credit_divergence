@@ -145,7 +145,7 @@ def main():
     regional_acid = make_regional_acid_variants(df["acid_price"])
     tc_variants = make_tc_variants(df)
     result_b = run_model_b(df.drop(columns=["acid_price", "zn_tc", "cu_tc"]), regional_acid, tc_variants,
-                            zn_params=demo_zn_params, cu_params=demo_cu_params)
+                           zn_params=demo_zn_params, cu_params=demo_cu_params)
     print("\n=== MODEL B (robustness) stability summary ===")
     for k, v in result_b["stability"].items():
         print(f"{k}: {v}")
@@ -165,32 +165,50 @@ def main():
     print(comparison.to_string(index=False))
 
     # ---- plots ----
+    # LABELING FIX (2026-09-26): only the top-left subplot used to say
+    # "(synthetic demo data)" in its title -- the bottom panel of
+    # demo_margins.png and the whole of demo_monitor.png carried no
+    # synthetic-data marking at all. That's fine as long as a viewer also
+    # has the console REMINDER or this file's own docstring in front of
+    # them, but a PNG travels on its own once it's opened from the output
+    # folder or shared out of context -- exactly how this got flagged: a
+    # correct read of the chart in isolation, with no visible sign it
+    # wasn't real data. Every panel below now says so, and each figure
+    # also gets a whole-figure stamp so it's unmissable even if only part
+    # of the image is visible (e.g. a thumbnail or a partial screenshot).
+    SYNTHETIC_TAG = "SYNTHETIC DEMO DATA -- NOT real market data -- see demo.py"
     fig, ax = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    fig.suptitle(SYNTHETIC_TAG, color="firebrick", fontsize=11, fontweight="bold")
     ax[0].plot(result_a["sm_zn"].index, result_a["sm_zn"], label="Zinc smelter margin")
     ax[0].plot(result_a["sm_cu"].index, result_a["sm_cu"], label="Copper smelter margin")
     ax[0].axhline(0, color="grey", lw=0.8)
-    ax[0].set_title("Representative smelter margin, Zn vs Cu (synthetic demo data)")
+    ax[0].set_title("Representative smelter margin, Zn vs Cu (SYNTHETIC demo data)")
     ax[0].legend()
 
     ax[1].plot(df.index, df["acid_price"], label="Acid price (national proxy)", color="tab:red")
     ax[1].plot(result_a["acid_star_zn"].index, result_a["acid_star_zn"], "--", label="Acid* (Zn curtailment threshold)")
     ax[1].plot(result_a["acid_star_cu"].index, result_a["acid_star_cu"], "--", label="Acid* (Cu curtailment threshold)")
-    ax[1].set_title("Sulfuric acid price vs estimated curtailment thresholds")
+    ax[1].set_title("Sulfuric acid price vs estimated curtailment thresholds (SYNTHETIC demo data)")
     ax[1].legend()
-    plt.tight_layout()
+    plt.tight_layout(rect=(0, 0, 1, 0.95))
     plt.savefig("output/demo_margins.png", dpi=130)
     plt.close(fig)
 
     fig2, ax2 = plt.subplots(figsize=(10, 4))
+    fig2.suptitle(SYNTHETIC_TAG, color="firebrick", fontsize=11, fontweight="bold")
     ax2.fill_between(result_a["monitor"].index, 0, result_a["monitor"]["conditions_met"], step="mid", alpha=0.5)
     ax2.axhline(5, color="red", lw=1, ls="--", label="all 5 conditions confirmed")
-    ax2.set_title("Thesis-monitoring conditions met over time (0-5) -- a research-note input, not a trading signal")
+    ax2.set_title("Thesis-monitoring conditions met over time, 0-5 (SYNTHETIC demo data -- a\nresearch-note input, not a trading signal, even on real data)")
     ax2.legend()
-    plt.tight_layout()
+    plt.tight_layout(rect=(0, 0, 1, 0.90))
     plt.savefig("output/demo_monitor.png", dpi=130)
     plt.close(fig2)
 
     print("\nSaved: output/demo_margins.png, output/demo_monitor.png, output/model_abc_comparison.csv")
+    print(
+        "For a REAL-data chart, see output/copper_acid_cushion.png, produced by "
+        "acid_cushion_monitor.py, not this file."
+    )
     print(
         "\n*** REMINDER: every number above comes from demo.py's SYNTHETIC fixture "
         "(make_synthetic_data()), including output/model_abc_comparison.csv. It proves "

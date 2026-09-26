@@ -270,40 +270,85 @@ def _interpolate_to_grid(df: pd.DataFrame, value_col: str, freq="W-FRI") -> pd.D
     "the interpolation grid updates automatically once new cited anchors
     are added." Fixed by rolling the grid's end up to the next on-cycle
     date whenever df.index.max() isn't already on-cycle, so any cited
-    point -- on-cycle or not -- always gets a grid node. An off-cycle date
-    still gets ASSIGNED to the nearest on-cycle grid label (e.g. 2026-09-24
-    -> grid row 2026-09-25) via the existing nearest/3-day-tolerance
-    reindex below, exactly like every other "cited-approx" date in this
-    module already is -- but never silently dropped. The true reported
-    date always stays visible in the raw (non-interpolated) `note` field
-    and in `cu_tc_weekly()` / `cu_acid_weekly()`, which are untouched by
-    this grid-snapping."""
+    point -- on-cycle or not -- always gets a grid node.
+
+    VINTAGE FIX (2026-09-26, external review feedback -- a real gap in the
+    2026-09-25 fix above, though never actually triggered by data this
+    file ships): an off-cycle cited date used to be assigned to its
+    nearest grid label via `.reindex(full_index, method="nearest",
+    tolerance="3D")`. "Nearest" picks whichever side is chronologically
+    CLOSER -- which means a citation dated slightly AFTER a grid Friday
+    could get snapped BACKWARD onto that EARLIER Friday's label. Example:
+    a citation genuinely dated Saturday 2026-09-19 sits 1 day from the
+    2026-09-18 grid Friday and 6 days from 2026-09-25 -- "nearest" would
+    have displayed it AT 2026-09-18, a date on which that number was not
+    yet public. Every citation this file actually ships is dated ON or
+    BEFORE its assigned grid Friday (the 2026-09-24 Thursday print is the
+    closest case, and it snaps FORWARD to 2026-09-25, which is fine -- a
+    grid label may always show OLDER information, never NEWER), so this
+    was a property the mechanism failed to GUARANTEE, not a symptom ever
+    actually observed. Fixed by replacing "nearest" with `pd.merge_asof(
+    ..., direction="backward")`: each grid date is assigned the most
+    recent citation dated <= itself (within 3 days), full stop -- never a
+    citation dated after it, at any distance. A citation that doesn't
+    fall within reach of any grid date under this backward-only rule (as
+    the hypothetical Sept-19 one wouldn't, being 6 days from the next
+    eligible grid date forward) is not mislabeled "cited" anywhere; it
+    still informs the time-interpolated estimate at its true position
+    (see below), just without being flagged as if a real print existed
+    exactly there.
+
+    Genuine multi-week gaps (no citation within reach on EITHER side --
+    e.g. several Fridays between 2026-01-02 and 2026-02-27, where no SMM
+    print was cited at all) still fall back to time-interpolation between
+    the nearest PAST and FUTURE real citations. This is unaffected by the
+    fix above and is NOT a look-ahead problem the way backward-snapping a
+    live citation would be: it describes an already-fully-elapsed
+    historical window, purely for charting/trend continuity -- nothing in
+    this project treats an interior grid row as a live, real-time
+    decision point (only `weekly.iloc[-1]`, always the single most
+    current row, is used that way, and it is always genuinely "cited" --
+    see the self-check below). Using both neighbors to smooth a CLOSED
+    gap is standard practice for retrospective series construction; using
+    a not-yet-elapsed future value to describe a live "as of today" edge
+    reading is the actual violation, and that's what's fixed here.
+
+    The true reported date always stays visible in the raw
+    (non-interpolated) `note` field and in `cu_tc_weekly()` /
+    `cu_acid_weekly()`, which are untouched by this grid-snapping."""
     grid_end = pd.date_range(start=df.index.max(), periods=1, freq=freq)[0]
     full_index = pd.date_range(df.index.min(), grid_end, freq=freq)
     combined_index = df.index.union(full_index).sort_values()
-    out = df[[value_col]].reindex(combined_index)
-    out[value_col] = out[value_col].interpolate(method="time")
-    out = out.reindex(full_index, method="nearest", tolerance=pd.Timedelta("3D")).ffill()
 
-    # Status is computed SEPARATELY from the value, by snapping each raw
-    # cited/derived date straight onto its nearest grid date (same 3-day
-    # tolerance as the value's own snap above). This matters specifically
-    # for an off-cycle raw date (e.g. the 2026-09-24 Thursday print, which
-    # lands on grid date 2026-09-25): the OLD version of this line built
-    # `status` off `combined_index` (raw dates UNION grid dates), so an
-    # off-cycle raw date and its nearby grid date were two DIFFERENT rows
-    # in that intermediate frame -- the raw date correctly got its own
-    # "cited" status, but the grid date (which is what actually survives
-    # into the final output) had no status of its own and fell through to
-    # the "interpolated (grid-fill)" default, mislabeling a genuinely
-    # cited value as merely interpolated. Reindexing `status` straight
-    # from `df` onto `full_index` with the same nearest/3-day rule used
-    # for the value avoids that: a value and the status describing it are
-    # now guaranteed to come from the same source row.
-    out["status"] = df["status"].reindex(
-        full_index, method="nearest", tolerance=pd.Timedelta("3D")
-    ).fillna("interpolated (grid-fill)")
-    return out
+    # Time-interpolated estimate across the full union of raw + grid
+    # dates -- used ONLY as a fallback for grid dates with no citation
+    # within reach on the backward-asof pass below (a genuine multi-week
+    # gap), never to override an actual citation.
+    smoothed = df[[value_col]].reindex(combined_index)
+    smoothed[value_col] = smoothed[value_col].interpolate(method="time")
+    smoothed_on_grid = smoothed.reindex(full_index)[value_col]
+
+    # Backward-asof alignment: each grid date gets the most recent
+    # citation dated <= itself, within 3 days -- never a later one, at
+    # any distance. This is what actually decides whether a grid row is
+    # labeled "cited" (a real, dated citation genuinely covers it) or
+    # falls through to the smoothed estimate above ("interpolated
+    # (grid-fill)").
+    raw_sorted = df.reset_index().rename(columns={df.index.names[0] or "index": "obs_date"})
+    grid_frame = pd.DataFrame({"grid_date": full_index})
+    asof = pd.merge_asof(
+        grid_frame, raw_sorted.sort_values("obs_date"),
+        left_on="grid_date", right_on="obs_date",
+        direction="backward", tolerance=pd.Timedelta("3D"),
+    ).set_index("grid_date")
+
+    out = pd.DataFrame(index=full_index)
+    out[value_col] = asof[value_col]
+    out["status"] = asof["status"]
+    still_missing = out[value_col].isna()
+    out.loc[still_missing, value_col] = smoothed_on_grid[still_missing]
+    out["status"] = out["status"].fillna("interpolated (grid-fill)")
+    return out.ffill()
 
 
 def _selfcheck_grid_never_drops_latest_point():
@@ -327,6 +372,65 @@ def _selfcheck_grid_never_drops_latest_point():
     assert grid["status"].iloc[-1] == "cited", (
         f"grid's last row mislabels a genuinely cited, off-cycle-snapped "
         f"point as {grid['status'].iloc[-1]!r} instead of 'cited'")
+
+
+def _selfcheck_no_future_observation_leaks_backward():
+    """Regression test for the 2026-09-26 vintage fix: a citation dated
+    AFTER a grid label must never be displayed AT that (earlier) label,
+    even if it is chronologically closer to that label than to its own
+    correct one. This never happened with data this file actually ships
+    (every real citation is dated on/before its assigned grid Friday) --
+    this test constructs the case synthetically, on purpose, because the
+    old `nearest`-based mechanism had no structural guarantee against it."""
+    raw = [
+        ("2026-08-14", 100.0, "cited", "x"),
+        ("2026-08-28", 90.0, "cited", "x"),
+        ("2026-09-04", 80.0, "cited", "x"),
+        ("2026-09-18", 70.0, "cited", "x"),
+        # Saturday, 1 calendar day after the 2026-09-18 grid Friday, but
+        # dated STRICTLY AFTER it -- under the old "nearest" mechanism
+        # this would have been closer to 2026-09-18 (1 day) than to
+        # 2026-09-25 (6 days) and would have been displayed there.
+        ("2026-09-19", 999.0, "cited", "synthetic future-dated point"),
+    ]
+    df = _weekly_frame(raw, "v")
+    grid = _interpolate_to_grid(df, "v")
+    assert grid.loc[pd.Timestamp("2026-09-18"), "v"] != 999.0, (
+        "vintage bug reintroduced: a citation dated 2026-09-19 leaked "
+        "backward onto the earlier 2026-09-18 grid label")
+    assert grid.loc[pd.Timestamp("2026-09-18"), "status"] == "cited", (
+        "2026-09-18's own genuine citation (70.0) was overwritten")
+    assert grid.loc[pd.Timestamp("2026-09-18"), "v"] == 70.0
+
+
+def _selfcheck_vintage_alignment_model_b():
+    """Regression test: model_b's acid_price_source comparison must draw
+    cu_price/tc_usd_dmt/silver_price/acid_usd_t for ALL THREE sources from
+    the exact same row (same date) -- never a mix of today's China-domestic
+    reading against a stale regional-benchmark date under a mismatched TC.
+    See model_b.py's run_model_b_acid_robustness docstring for the bug
+    this guards against."""
+    import model_a as ma
+    import model_b as mb
+
+    out_a = ma.run_model_a_copper_acid_cushion()
+    out_b = mb.run_model_b_acid_robustness(
+        out_a["weekly"], out_a["params"], out_a["energy_price_usd_mwh"]
+    )
+    ref_date = out_b["acid_price_source_reference_date"]
+    weekly = out_a["weekly"]
+    reference_row = weekly.loc[pd.Timestamp(ref_date)]
+    china_row = out_b["acid_price_source"].loc[
+        out_b["acid_price_source"]["acid_price_source"] == "smm_china_domestic"
+        ]
+    if china_row.empty:
+        china_row = out_b["acid_price_source"].iloc[[0]]
+    # The china-domestic acid price fed into this comparison must be the
+    # value AT ref_date, not at weekly's own true latest date, whenever
+    # the two differ (exactly the scenario the 2026-09-25 fix addresses).
+    assert abs(china_row["acid_price_usd_t"].iloc[0] - reference_row["acid_usd_t"]) < 1e-6, (
+        "model_b's acid_price_source comparison is not pinned to the "
+        "regional benchmark's own reference date -- vintage bug reintroduced")
 
 
 def cu_tc_weekly_interpolated() -> pd.DataFrame:
@@ -695,6 +799,8 @@ PHYSICAL_RESPONSE_EVIDENCE = {
 
 if __name__ == "__main__":
     _selfcheck_grid_never_drops_latest_point()
+    _selfcheck_no_future_observation_leaks_backward()
+    _selfcheck_vintage_alignment_model_b()
     _tc_grid = cu_tc_weekly_interpolated()
     _acid_grid = cu_acid_weekly_interpolated()
     assert _tc_grid.index.max() == pd.Timestamp("2026-09-25"), (
