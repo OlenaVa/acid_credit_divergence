@@ -25,7 +25,7 @@ FRED zinc (PZINCUSDM)   -> fred.stlouisfed.org/series/PZINCUSDM (free, no
                             COMEX via yfinance (ZNC=F), which a real local
                             pull showed was frozen at one settlement price
                             for 93% of a 2023-2026 sample; see
-                            load_fred_zinc and STRATEGY_NOTE.md.
+                            load_fred_zinc and the earlier strategy note.
 USGS MCS data releases   -> data.usgs.gov, "Copper"/"Zinc" commodity data
                             release (CC0, free). Annual mine/refined
                             production by country.
@@ -59,7 +59,7 @@ live only in fetch_metal_prices_yfinance.py (_warn_if_large_jump) is
 deliberately NOT duplicated here. It belongs at fetch time, once, on the
 raw pull -- duplicating similar-but-not-identical staleness/outlier logic
 in two places is exactly how the two copies of fetch_metal_prices_yfinance.py
-drifted apart in the first place (see README.md's changelog). This module
+drifted apart in the first place (see the earlier README's changelog). This module
 keeps its own, different check (the per-cell flat/stale guard in
 load_real_metal_prices_quarterly below), which is a second, independent
 line of defense against a different failure mode (a frozen quarterly
@@ -310,7 +310,7 @@ def load_real_metal_prices_quarterly(path: str, quarter_labels, stale_share_thre
     JUMP (e.g. a real event or a contract-roll splice) -- that is a
     different failure mode, checked once at fetch time by
     fetch_metal_prices_yfinance.py's _warn_if_large_jump, not here. See
-    that module and STRATEGY_NOTE.md's correction note for two real,
+    that module and the earlier strategy note's correction note for two real,
     verified examples (the 2025-07-30 COMEX copper tariff-exemption
     collapse and the 2026-01-30 silver crash) that this guard is not
     meant to catch, and should not catch -- both are real market moves.

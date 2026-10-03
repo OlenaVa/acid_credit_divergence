@@ -15,7 +15,7 @@ it happened on 2026-09-16):
              dates where an alternative source actually has a print, not a
              second full time series -- and it does not always confirm the
              thesis is source-independent; see the function's docstring
-             and STRATEGY_NOTE.md for a real disagreement it surfaces.
+             and the earlier strategy note for a real disagreement it surfaces.
 
   SECONDARY: run_model_b() / run_cost_stress() -- the ORIGINAL synthetic-
              regional / cost-shock robustness check built for the
@@ -75,7 +75,7 @@ def run_model_b_acid_robustness(
         useful question: is the cushion-ratio READING peculiar to China's
         domestic price level, or does it hold up (roughly) at a
         materially different acid price too? Below $400/t (Zambia), it
-        does not -- see the result and STRATEGY_NOTE.md.
+        does not -- see the result and the earlier strategy note.
 
     (2) tc_index_provider -- SMM's TC print vs S&P Global Platts' CIF
         China TC assessment, compared at the nearest dates both actually

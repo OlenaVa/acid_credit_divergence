@@ -37,7 +37,7 @@ REVIEW NOTE (2026-09-16): this module now backs TWO analyses, not one:
   2. SECONDARY -- the original zinc-vs-copper cross-metal check
      (model_a.run_model_a / model_b / model_c's legacy paths, real_data_
      check.py), kept for cross-metal confirmation but no longer the
-     central test -- see README.md's 2026-09-16 changelog entry for why.
+     central test -- see the earlier README's 2026-09-16 changelog entry for why.
 Both share this same smelter_margin() engine; nothing about the core
 formula changed, only which outputs are treated as the headline result.
 """
@@ -196,7 +196,7 @@ def curtailment_threshold(
     DEFAULT_ZN_PARAMS/DEFAULT_CU_PARAMS, Acid* tends to come out far
     outside any realistic observed acid price (demo.py's synthetic run
     produces roughly -1000 to -2600 $/t, versus a real observed range of
-    roughly $40-205/t per STRATEGY_NOTE.md). That does not make the
+    roughly $40-205/t per the earlier strategy note). That does not make the
     function wrong -- it is an honest signal that condition_2's "acid
     price has crossed Acid*" branch in thesis_monitor.py is close to
     unreachable until SmelterParams' still-uncalibrated fields
@@ -222,7 +222,7 @@ def threshold_gap(acid_star_zn: Optional[float], acid_star_cu: Optional[float]) 
 
     SIGN CONVENTION (corrected 2026-09-15 -- the previous version of this
     docstring had this backwards; see _selfcheck_threshold_gap_sign()
-    below for a runnable proof, and README.md's changelog for the full
+    below for a runnable proof, and the earlier README's changelog for the full
     account):
 
     Acid* is the acid price at which SM(acid_price) = 0, holding

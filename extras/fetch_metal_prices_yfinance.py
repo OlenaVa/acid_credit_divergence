@@ -11,7 +11,7 @@ REVIEW NOTE (2026-09-15): this project had TWO copies of this file -- this
 one (inside acid_credit_divergence/, with the history and safety checks
 below) and a second, simplified copy sitting at the project root (missing
 _warn_if_flat_or_stale entirely). That is the ONLY copy that should exist
-now -- delete the root-level duplicate. See README.md's changelog for the
+now -- delete the root-level duplicate. See the earlier README's changelog for the
 full account of why this matters: whichever copy actually gets run is the
 one that determines whether data/metal_prices.csv was quality-checked at
 all, and the simplified root copy had no checks running.
@@ -34,7 +34,7 @@ the same way arbitragebot's README documents its own bugs-found-and-fixed:
   3. Final fix: zinc now comes from FRED's PZINCUSDM (IMF "Global price
      of Zinc", monthly, verified real, no unit conversion needed) via
      `data_loaders.load_fred_zinc` -- a genuine benchmark series, not a
-     thin futures print. See `real_data_check.py` and `STRATEGY_NOTE.md`.
+     thin futures print. See `real_data_check.py` and the earlier strategy note.
      This script no longer fetches zinc at all, to avoid two competing
      "sources of truth" for the same variable.
 
@@ -62,7 +62,7 @@ the same way arbitragebot's README documents its own bugs-found-and-fixed:
      2026-01-29/30 (a historic melt-up to an all-time high near $121/oz
      followed by a ~30%+ one-day crash, driven by Fed-nomination news and
      forced liquidations -- again real, again unrelated to smelter
-     byproduct economics). See STRATEGY_NOTE.md's correction note.
+     byproduct economics). See the earlier strategy note's correction note.
 
 Sulfuric acid and TC are NOT available via any free API -- nothing here
 fetches those; keep using data_loaders.load_regional_acid_prices and
@@ -72,7 +72,7 @@ data_loaders.load_fred_zinc instead of this script -- see above.
 
 Usage (locally, with network access):
     pip install yfinance pandas
-    python fetch_metal_prices_yfinance.py --start 2023-01-01 --out data/metal_prices.csv
+    python extras/fetch_metal_prices_yfinance.py --start 2023-01-01 --out data/metal_prices.csv
 """
 
 import argparse

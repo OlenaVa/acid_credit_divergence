@@ -17,7 +17,7 @@ ORIGINAL version of this project's thesis assumed (TC collapsing
 2024-2026, acid price falling too) -- NOT what real_data_check.py and
 copper_acid_data.py actually found happened (acid ROSE sharply through
 most of 2024-2026, then narrowed from an elevated level starting mid-2026
--- see STRATEGY_NOTE.md). That mismatch is fine, even expected: this file
+-- see the earlier strategy note). That mismatch is fine, even expected: this file
 exists ONLY to prove the zinc/copper code paths execute correctly, not to
 model real dynamics -- treat every number below as a pipeline smoke test,
 never as a market claim.
@@ -29,15 +29,17 @@ Outputs (in ./output/):
 
 REVIEW NOTE (2026-09-15): this run now (1) deletes the stale, pre-rename
 `output/demo_signal.png` artifact on every run (see _clean_stale_outputs
-below -- README.md's "Known limitations" already warned this file could
+below -- the earlier README's "Known limitations" already warned this file could
 linger and be mistaken for current output; it was found still present),
 and (2) prints an explicit reminder at the end that every number here is
-synthetic, because `output/model_abc_comparison.csv`'s "A (core, public
+synthetic, because `extras/synthetic_demo/model_abc_comparison.csv`'s "A (core, public
 data)" label describes methodology (public vs proprietary data SOURCES),
 not "this run used real prices" -- it's easy to conflate the two at a
 glance. For real-data numbers, run real_data_check.py instead.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # allow `python extras/<script>.py` from the repo root
 import os
 
 import numpy as np
@@ -56,6 +58,10 @@ from thesis_monitor import MonitorConfig, narrative_summary, conditions_met_dist
 # see thesis_monitor.py's docstring for why "signal" framing was dropped.
 _STALE_OUTPUT_FILES = [
     "output/demo_signal.png",
+    # pre-2026-10-01 locations of the synthetic demo outputs (now under extras/synthetic_demo/)
+    "output/demo_margins.png",
+    "output/demo_monitor.png",
+    "output/model_abc_comparison.csv",
 ]
 
 
@@ -119,7 +125,7 @@ def make_tc_variants(df: pd.DataFrame, seed=13) -> dict:
 
 
 def main():
-    os.makedirs("output", exist_ok=True)
+    os.makedirs("extras/synthetic_demo", exist_ok=True)
     _clean_stale_outputs()
 
     df = make_synthetic_data()
@@ -160,7 +166,7 @@ def main():
     print(f"Used proprietary series: {result_c['used_proprietary_series'] or 'none (identical to Model A)'}")
 
     comparison = compare_a_b_c(result_a, result_b["stability"], result_c)
-    comparison.to_csv("output/model_abc_comparison.csv", index=False)
+    comparison.to_csv("extras/synthetic_demo/model_abc_comparison.csv", index=False)
     print("\n=== A vs B vs C comparison ===")
     print(comparison.to_string(index=False))
 
@@ -191,7 +197,7 @@ def main():
     ax[1].set_title("Sulfuric acid price vs estimated curtailment thresholds (SYNTHETIC demo data)")
     ax[1].legend()
     plt.tight_layout(rect=(0, 0, 1, 0.95))
-    plt.savefig("output/demo_margins.png", dpi=130)
+    plt.savefig("extras/synthetic_demo/demo_margins.png", dpi=130)
     plt.close(fig)
 
     fig2, ax2 = plt.subplots(figsize=(10, 4))
@@ -201,17 +207,17 @@ def main():
     ax2.set_title("Thesis-monitoring conditions met over time, 0-5 (SYNTHETIC demo data -- a\nresearch-note input, not a trading signal, even on real data)")
     ax2.legend()
     plt.tight_layout(rect=(0, 0, 1, 0.90))
-    plt.savefig("output/demo_monitor.png", dpi=130)
+    plt.savefig("extras/synthetic_demo/demo_monitor.png", dpi=130)
     plt.close(fig2)
 
-    print("\nSaved: output/demo_margins.png, output/demo_monitor.png, output/model_abc_comparison.csv")
+    print("\nSaved: extras/synthetic_demo/demo_margins.png, extras/synthetic_demo/demo_monitor.png, extras/synthetic_demo/model_abc_comparison.csv")
     print(
         "For a REAL-data chart, see output/copper_acid_cushion.png, produced by "
         "acid_cushion_monitor.py, not this file."
     )
     print(
         "\n*** REMINDER: every number above comes from demo.py's SYNTHETIC fixture "
-        "(make_synthetic_data()), including output/model_abc_comparison.csv. It proves "
+        "(make_synthetic_data()), including extras/synthetic_demo/model_abc_comparison.csv. It proves "
         "the pipeline runs; it is NOT evidence about real markets, and 'A (core, public "
         "data)' describes data-source METHODOLOGY, not 'this run used real prices'. For "
         "real-data numbers on the zinc-vs-copper cross-metal check, run real_data_check.py "

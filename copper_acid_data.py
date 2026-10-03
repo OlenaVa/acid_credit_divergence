@@ -11,7 +11,7 @@ only real dataset here; the article and the review that produced this
 module both concluded the sharper, better-evidenced version of the thesis
 is COPPER-specific (TC vs acid-credit, both on the same smelter's income
 statement), with zinc as a SECONDARY cross-metal confirmation, not the
-main test. See README.md / STRATEGY_NOTE.md for the full reasoning.
+main test. See STRATEGY_NOTE.md and docs/METHODOLOGY.md for the reasoning.
 
 Every series below is WEEKLY where the underlying SMM index actually
 publishes weekly (TC and the China acid index both do); every point is
@@ -32,7 +32,7 @@ tested.
 Sources checked 2026-09-16; TC and acid weekly series, physical-response
 evidence, and the fertiliser/acid-export-policy note extended 2026-09-25
 with three additional real, cited weekly prints (2026-09-11, 09-18, 09-24)
-plus two new physical-response citations -- see README.md's changelog for
+plus two new physical-response citations -- see the earlier README's changelog for
 the full list of what changed in that pass. Full citation list at the
 bottom of each constant's definition.
 """
@@ -63,43 +63,51 @@ CU_TC_WEEKLY_RAW = [
      "Feb 28 2026 US/Israel strikes on Iran triggered the Hormuz "
      "disruption (news.metal.com, 'Copper Smelting Industry Faces the "
      "Test of Extremely Low TCs')."),
-    ("2026-04-09", -78.50, "cited",
-     "DIFFERENT INDEX, cross-check only: S&P Global Platts CIF China "
-     "clean copper concentrate TC assessment, -$78.50/t on 2026-04-09 "
-     "(S&P Global Commodity Insights, 'Chinese copper concs TC/RC to "
-     "remain under pressure in Q2'). Not blended into the SMM series "
-     "below -- kept separate because Platts and SMM use different panels "
-     "and can print different absolute levels for the same week; see "
-     "model_b.py's index-provider robustness check."),
+    ("2026-03-13", -60.39, "cited",
+     "SMM Imported Copper Concentrate Index, -$60.39/dmt, first print below -$60 (news.metal.com, '[SMM Analysis] How Chinese Copper Smelters Navigate Counter-Cycle & Negative TCs', 2026-03-13). Added in the 2026-10-01 verification pass."),
     ("2026-04-17", -78.61, "cited",
      "SMM Imported Copper Concentrate Index (weekly), implied prior-week "
      "print from the 2026-04-24 SMM article's 'down $2.83/dmt from the "
-     "previous reading of -$78.61/dmt' (news.metal.com)."),
+     "previous reading of -$78.61/dmt' (news.metal.com). Link: https://news.metal.com/newscontent/103881993-Sulphuric-Acid-Prices-Key-to-Copper-Smelter-Cutbacks-Amid-Collapsing-TCs"),
     ("2026-04-24", -81.44, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$81.44/dmt "
      "(news.metal.com, 'Sulphuric Acid Prices Key to Copper Smelter "
-     "Cutbacks'; also the source article's own citation)."),
+     "Cutbacks'; also the source article's own citation). Link: https://news.metal.com/newscontent/103881993-Sulphuric-Acid-Prices-Key-to-Copper-Smelter-Cutbacks-Amid-Collapsing-TCs"),
     ("2026-05-15", -102.84, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$102.84/dmt, "
      "first time below -$100/dmt (news.metal.com, 'Copper Concentrate "
      "TCs Break Through Negative Triple Digits'). Cross-checked: "
-     "Mysteel's own index printed -$103.62/dmt the same day."),
-    ("2026-06-26", -124.50, "cited",
-     "SMM Imported Copper Concentrate Index (weekly), -$124.5/dmt "
+     "Mysteel's own index printed -$103.62/dmt the same day. Link: https://news.metal.com/newscontent/103909269-Copper-Concentrate-TCs-Break-Through-Negative-Triple-Digits-What-Challenges-Do-Smelters-Face"),
+    ("2026-06-26", -124.45, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$124.45/dmt (exact figure per the 2026-07-03 SMM weekly review; an earlier source rounded it to -$124.5) "
      "(news.metal.com, 'China's Copper Cathode Production Continued to "
      "Decline More Than Expected in July', which quotes this as the "
-     "prior print ahead of the Jul-31 figure below)."),
+     "prior print ahead of the Jul-31 figure below). Link: https://news.metal.com/en/newscontent/103987313-mid-year-long-term-contract-pricing-scheme-settled-index-linked-model-breaks-new-ground-smm-copper-concentrates-spot-wee"),
+    ("2026-07-03", -128.25, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$128.25/dmt, down $3.80 from -$124.45 (news.metal.com, 'Mid-Year Long-Term Contract Pricing Scheme Settled...', SMM Copper Concentrates Spot Weekly Review, 2026-07-03). Replaces a grid-fill interpolation (-131.47) -- added 2026-10-01. Link: https://news.metal.com/en/newscontent/103987313-mid-year-long-term-contract-pricing-scheme-settled-index-linked-model-breaks-new-ground-smm-copper-concentrates-spot-wee"),
+    ("2026-07-10", -132.84, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$132.84/dmt, down $4.59 from -$128.25 -- published directly in the SMM weekly review of 2026-07-10 (news.metal.com) and repeated as the 'previous reading' in the 2026-07-17 review. Replaces a grid-fill interpolation (-138.45) -- added 2026-10-01. Link: https://news.metal.com/newscontent/103999281-las-tc-spot-caen-por-debajo-de-la-marca-de--130-y-la-brecha-entre-los-niveles-de-precios-psicológicos-de-las-fundiciones"),
+    ("2026-07-17", -146.15, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$146.15/dmt, down $13.31 from -$132.84 (same 2026-07-17 SMM weekly review). Replaces a grid-fill interpolation (-145.42) -- added 2026-10-01. Link: https://news.metal.com/en/newscontent/104011502-spot-transactions-of-imported-copper-concentrates-increase-tcs-continue-to-deteriorate-smm-copper-concentrate-spot-weekl"),
+    ("2026-07-24", -154.76, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$154.76/dmt -- the 'previous' reading in the 2026-07-31 SMM weekly review (news.metal.com, 'Cobre Panama mine restart accelerates...'). This is the 9-week reference point of the headline trend figures; it was a grid-fill interpolation (-152.40) until 2026-10-01. Link: https://news.metal.com/en/newscontent/104036547-cobre-panama-mine-restart-accelerates-imported-copper-concentrate-spot-tcs-continue-to-deteriorate-smm-copper-concentrat"),
     ("2026-07-31", -159.37, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$159.37/dmt, down "
      "$30.31/dmt from -$124.5/dmt on Jun 26 (news.metal.com; also the "
-     "source article's own citation)."),
+     "source article's own citation). Link: https://news.metal.com/en/newscontent/104036547-cobre-panama-mine-restart-accelerates-imported-copper-concentrate-spot-tcs-continue-to-deteriorate-smm-copper-concentrat"),
+    ("2026-08-07", -173.91, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$173.91/dmt, down $14.54 from -$159.37 (news.metal.com, 'Imported Copper Concentrate TCs Fall Steadily...', SMM weekly review 2026-08-07). Replaces a grid-fill interpolation (-169.49) -- added 2026-10-01. Link: https://news.metal.com/newscontent/104048814-imported-copper-concentrate-tcs-fall-steadily-some-construction-and-development-projects-at-el-teniente-the-worlds-large"),
+    ("2026-08-14", -175.37, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$175.37/dmt, down $1.46 from -$173.91 (SMM weekly review published 2026-08-14, dated 13 Aug). Replaces a grid-fill interpolation -- added 2026-10-02. Link: https://news.metal.com/newscontent/104060789-chilean-copper-commission-again-lowered-its-annual-production-forecast-and-the-pace-of-decline-in-the-imported-copper-co"),
+    ("2026-08-21", -182.14, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$182.14/dmt -- the 'previous period' in the 2026-08-28 SMM weekly review (news.metal.com, 'Jiangxi Copper Corporation Further Expanded...'). Replaces a grid-fill interpolation (-189.72) -- added 2026-10-01. Link: https://news.metal.com/newscontent/104085966-jiangxi-copper-corporation-further-expanded-its-global-resource-footprint-the-imported-copper-concentrate-index-continue"),
     ("2026-08-28", -199.84, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$199.84/dmt "
      "(source article, citing the print one week before its own "
-     "2026-09-04 headline figure)."),
+     "2026-09-04 headline figure). Link: https://news.metal.com/newscontent/104085966-jiangxi-copper-corporation-further-expanded-its-global-resource-footprint-the-imported-copper-concentrate-index-continue"),
     ("2026-09-04", -200.31, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$200.31/dmt "
-     "(source article's headline TC figure)."),
+     "(source article's headline TC figure). Link: https://news.metal.com/newscontent/104099029-codelco-q2-own-copper-production-declined-yoy-spot-tc-decline-slowed-smm-copper-concentrates-spot-weekly-review"),
     ("2026-09-11", -209.70, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$209.70/dmt -- "
      "back-calculated from the 2026-09-18 print's own citation ('down "
@@ -107,11 +115,11 @@ CU_TC_WEEKLY_RAW = [
      "news.metal.com, 'Imported Copper Concentrate TCs Continue to Fall, "
      "with Some Smelters Beginning to Show Willingness to Cut "
      "Production' (SMM Copper Concentrate Spot Weekly Review, "
-     "2026-09-18). Added 2026-09-25."),
+     "2026-09-18). Added 2026-09-25. Link: https://news.metal.com/newscontent/104123127-imported-copper-concentrate-tcs-continue-to-fall-with-some-smelters-beginning-to-show-willingness-to-cut-production-smm-copper-concentrate-spot-weekly-review"),
     ("2026-09-18", -221.89, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$221.89/dmt, a "
      "new record low (news.metal.com, same 2026-09-18 SMM Copper "
-     "Concentrate Spot Weekly Review as above). Added 2026-09-25."),
+     "Concentrate Spot Weekly Review as above). Added 2026-09-25. Link: https://news.metal.com/newscontent/104123127-imported-copper-concentrate-tcs-continue-to-fall-with-some-smelters-beginning-to-show-willingness-to-cut-production-smm-copper-concentrate-spot-weekly-review"),
     ("2026-09-24", -224.53, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$224.53/dmt, down "
      "$2.64/dmt from -$221.89/dmt 'in the previous period' -- another new "
@@ -129,7 +137,7 @@ CU_TC_WEEKLY_RAW = [
      "quarterly TC guidance) declining to set ANY Q4 guidance price at "
      "all is itself new information: it signals the smelter side and "
      "miners/traders could not agree on a floor, not that -$224.53 is "
-     "necessarily durable."),
+     "necessarily durable. Link: https://news.metal.com/newscontent/104133941-cspt-meeting-decides-not-to-set-q4-copper-concentrate-tc-guidance-price-imported-copper-concentrate-trading-activity-declines-smm-copper-concentrate-spot-weekly-review"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -140,78 +148,76 @@ CU_ACID_WEEKLY_RAW = [
     ("2026-01-02", 919.5, "cited-approx",
      "SMM China Copper Smelting Acid Index, RMB 919.5/t 'at the start of "
      "the year' (news.metal.com, '[SMM Analysis] China's Sulphuric Acid "
-     "Production and Sulphur/Sulphuric Acid Imports/Exports in H1 2026')."),
+     "Production and Sulphur/Sulphuric Acid Imports/Exports in H1 2026'). Link: https://news.metal.com/newscontent/104021425-smm-analysis-chinas-sulphuric-acid-production-and-sulphursulphuric-acid-imports-exports-in-h1-2026"),
     ("2026-02-13", 930.0, "cited-approx",
      "Midpoint placeholder date within the source's stated 'Jan-Feb "
      "moved narrowly in the RMB 900-960/t range' (same H1-2026 SMM "
      "analysis as above) -- no single dated print exists for this week; "
-     "930 is the midpoint of the cited range, not a specific print."),
+     "930 is the midpoint of the cited range, not a specific print. Link: https://news.metal.com/newscontent/104021425-smm-analysis-chinas-sulphuric-acid-production-and-sulphursulphuric-acid-imports-exports-in-h1-2026"),
     ("2026-03-27", 1235.5, "cited-approx",
      "SMM China Copper Smelting Acid Index 'climbed quickly to RMB "
      "1,235.5/t' in March, following sulphur's Hormuz-driven surge (same "
      "H1-2026 SMM analysis). Dated to end-of-March as the analysis "
-     "reports it as the March figure; not a specific dated print."),
+     "reports it as the March figure; not a specific dated print. Link: https://news.metal.com/newscontent/104021425-smm-analysis-chinas-sulphuric-acid-production-and-sulphursulphuric-acid-imports-exports-in-h1-2026"),
     ("2026-04-24", 1660.5, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,660.5/t, up RMB "
      "31.5/t WoW (news.metal.com, 'Sulphuric Acid Prices Key to Copper "
      "Smelter Cutbacks'; consistent with the H1-2026 analysis's separate "
-     "'rose further to RMB 1,657/t in April')."),
+     "'rose further to RMB 1,657/t in April'). Link: https://news.metal.com/newscontent/103881993-Sulphuric-Acid-Prices-Key-to-Copper-Smelter-Cutbacks-Amid-Collapsing-TCs"),
     ("2026-05-15", 1665.0, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,665/t, up 83.7% from "
      "the start of the year (news.metal.com, 'Copper Concentrate TCs "
      "Break Through Negative Triple Digits')."),
-    ("2026-06-26", 1700.0, "cited-approx",
-     "Placeholder date (aligned to the TC series' Jun-26 point) within "
-     "the source's stated 'May-June remained in a high range of RMB "
-     "1,650-1,750/t' (H1-2026 SMM analysis) -- midpoint of the range, "
-     "not a specific dated print."),
-    ("2026-07-10", 1789.0, "cited-approx",
-     "Peak: SMM index 'briefly touched RMB 1,789/t in early July' "
-     "(H1-2026 SMM analysis; also the source article's own citation of "
-     "the pre-decline peak level). Dated to Jul 10 as a representative "
-     "'early July' Friday print -- the source does not give an exact date."),
+    ("2026-06-26", 1751.0, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,751/t -- implied by the 2026-07-03 SMM weekly review (index at RMB 1,789/t, 'up 38 yuan/mt WoW', "
+     "news.metal.com). Replaces an earlier cited-approx midpoint placeholder of RMB 1,700/t -- corrected 2026-10-01."),
+    ("2026-07-03", 1789.0, "cited",
+     "PEAK: SMM China Copper Smelting Acid Index, RMB 1,789/t, up 38 yuan/mt WoW, 'the fourth consecutive weekly rise' (news.metal.com, 'China's Sulphuric "
+     "Acid Market Regional Divergence Intensifies, Index Continues to Strengthen', SMM Sulphuric Acid Weekly Review, 2026-07-03). "
+     "CORRECTION 2026-10-01: this peak was previously dated 2026-07-10 as a 'representative early-July Friday'. SMM's own consecutive-decline "
+     "count (4th decline on 07-31, 9th on 09-04, 12th on 09-24) puts the first decline on 07-10 and therefore the peak on 07-03. Link: https://news.metal.com/en/newscontent/103987041-chinas-sulphuric-acid-market-regional-divergence-intensifies-index-continues-to-strengthen-smm-sulphuric-acid-weekly-rev"),
+    ("2026-07-10", 1784.5, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,784.5/t, down 4.5 yuan/mt WoW, 'ending its streak of gains' (SMM Sulphuric Acid Weekly Review, week ended 2026-07-10; also gives SMM Sulphur EXW Shandong weekly average RMB 8,928.5/t). Replaces a grid-fill interpolation (~1,776) -- added 2026-10-01. Link: https://news.metal.com/newscontent/103998631-중국-황산-시장이-고점에-머물며-지역-간-격차가-심화되고-있다-smm-sulfuric-acid-weekly-review"),
     ("2026-07-17", 1763.0, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,763/t 'as of 17 July' "
      "(H1-2026 SMM analysis) -- the first confirmed print of the decline "
-     "that reaches 'nine consecutive weeks' by 2026-09-04."),
-    ("2026-07-24", 1743.0, "interpolated",
-     "No citation found for this week; linearly interpolated between "
-     "2026-07-17 (1,763) and 2026-08-07 (1,703, see below)."),
-    ("2026-07-31", 1723.0, "interpolated",
-     "No citation found for this week; linearly interpolated between "
-     "2026-07-17 (1,763) and 2026-08-07 (1,703, see below)."),
+     "that reaches 'nine consecutive weeks' by 2026-09-04. Link: https://news.metal.com/newscontent/104021425-smm-analysis-chinas-sulphuric-acid-production-and-sulphursulphuric-acid-imports-exports-in-h1-2026"),
+    ("2026-07-24", 1742.0, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,742/t -- implied by the 2026-07-31 SMM weekly review (RMB 1,722.5/t, 'down 19.5 yuan/mt WoW'). "
+     "Was a grid-fill interpolation (1,743) until 2026-10-01; the interpolation turned out to be within RMB 1/t of the real print."),
+    ("2026-07-31", 1722.5, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,722.5/t, down 19.5 yuan/mt WoW, 'the fourth consecutive week of decline' (news.metal.com, "
+     "'China's sulphuric acid market continues to weaken as regional price declines widen...', SMM Sulphuric Acid Weekly Review, 2026-07-31). "
+     "Was a grid-fill interpolation (1,723) until 2026-10-01."),
     ("2026-08-07", 1703.0, "cited",
      "Back-calculated from the 2026-08-14 print's own citation ('down "
      "RMB 72/t WoW' from this week) -- see next row. Treated as cited, "
      "not interpolated, since it is implied directly by a dated source, "
-     "not smoothed between two distant points."),
+     "not smoothed between two distant points. Link: https://news.metal.com/newscontent/104060415-chinas-sulphuric-acid-market-continues-to-hit-bottom-weak-demand-drags-down-the-price-center-smm-sulphuric-acid-weekly-r"),
     ("2026-08-14", 1631.0, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,631/t, down RMB 72/t "
      "WoW, the SIXTH consecutive weekly pullback (news.metal.com, "
-     "'China's Sulphuric Acid Market Continues to Hit Bottom')."),
-    ("2026-08-21", 1607.0, "interpolated",
-     "No citation found for this week; linearly interpolated between "
-     "2026-08-14 (1,631) and 2026-08-28 (1,583.5, see below)."),
+     "'China's Sulphuric Acid Market Continues to Hit Bottom'). Link: https://news.metal.com/newscontent/104060415-chinas-sulphuric-acid-market-continues-to-hit-bottom-weak-demand-drags-down-the-price-center-smm-sulphuric-acid-weekly-r"),
     ("2026-08-28", 1583.5, "cited",
      "Back-calculated from the source article's 2026-09-04 figure ('down "
-     "44 yuan/t from the previous Friday') -- 1,539.5 + 44 = 1,583.5."),
+     "44 yuan/t from the previous Friday') -- 1,539.5 + 44 = 1,583.5. Link: https://news.metal.com/newscontent/104098691-china-sulphuric-acid-index-falls-for-nine-consecutive-weeks-with-a-widening-decline-domestic-sulphur-trade-rebounds-from-lows-while-sulphuric-acid-outside-china-stops-falling-and-stabilizes-smm-sulphuric-acid-weekly-review"),
     ("2026-09-04", 1539.5, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,539.5/t, the NINTH "
      "consecutive weekly decline (source article's headline acid "
-     "figure)."),
+     "figure). Link: https://news.metal.com/newscontent/104098691-china-sulphuric-acid-index-falls-for-nine-consecutive-weeks-with-a-widening-decline-domestic-sulphur-trade-rebounds-from-lows-while-sulphuric-acid-outside-china-stops-falling-and-stabilizes-smm-sulphuric-acid-weekly-review"),
     ("2026-09-11", 1418.0, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,418.0/t, the TENTH "
      "consecutive weekly decline, down RMB 121.5/t or 7.9% WoW -- "
      "back-calculated from the 2026-09-18 print's own citation of 'the "
      "previous week's drop of 121.5 yuan/mt or 7.9%' (news.metal.com, "
      "SMM China Sulphuric Acid Weekly Review, 2026-09-18). Added "
-     "2026-09-25."),
+     "2026-09-25. Link: https://news.metal.com/newscontent/104122023-chinas-sulphuric-acid-weekly-decline-narrowed-significantly-with-shanxi-falling-by-a-further-330-yuanmt-smm-sulphuric-acid-weekly-review"),
     ("2026-09-18", 1351.0, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,351.0/t, down RMB 67/t "
      "or 4.7% from RMB 1,418/t -- the ELEVENTH consecutive weekly "
      "decline, a sharp narrowing from the prior week's 7.9% drop "
      "(news.metal.com, SMM China Sulphuric Acid Weekly Review, "
-     "2026-09-18). Added 2026-09-25."),
+     "2026-09-18). Added 2026-09-25. Link: https://news.metal.com/newscontent/104122023-chinas-sulphuric-acid-weekly-decline-narrowed-significantly-with-shanxi-falling-by-a-further-330-yuanmt-smm-sulphuric-acid-weekly-review"),
     ("2026-09-24", 1247.5, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,247.5/t, down RMB "
      "103.5/t or 7.7% from RMB 1,351/t the previous Friday -- the "
@@ -220,7 +226,7 @@ CU_ACID_WEEKLY_RAW = [
      "2026-09-24 SMM Sulphuric Acid Weekly Review). Dated and "
      "grid-charted exactly as the 2026-09-24 TC print above -- see that "
      "row's note. Added 2026-09-25; most recent print as of this "
-     "project's current data-extension pass."),
+     "project's current data-extension pass. Link: https://news.metal.com/newscontent/104133833-waiting-for-policies-and-winter-stockpiling-the-sub-thousand-wave-spreads-to-central-china-smm-sulphuric-acid-weekly-review"),
 ]
 
 
@@ -254,7 +260,7 @@ def _interpolate_to_grid(df: pd.DataFrame, value_col: str, freq="W-FRI") -> pd.D
     grid weeks that had no citation at all.
 
     BUG FIX (found 2026-09-25, while adding the 2026-09-24 TC/acid prints --
-    see README.md changelog): `full_index` used to be built as
+    see the earlier README changelog): `full_index` used to be built as
     `pd.date_range(df.index.min(), df.index.max(), freq=freq)`. Because
     `date_range` with an anchored offset like "W-FRI" only ever lands ON
     that offset's dates, this silently CAPPED the grid at the last on-cycle
@@ -266,7 +272,7 @@ def _interpolate_to_grid(df: pd.DataFrame, value_col: str, freq="W-FRI") -> pd.D
     newest cited point never got its own grid row, `weekly.iloc[-1]` (used
     throughout model_a.py / acid_cushion_monitor.py / model_b.py as "the
     latest reading") would have silently reported a THREE-WEEK-STALE value
-    as current, and this directly contradicted README.md's own claim that
+    as current, and this directly contradicted the earlier README's own claim that
     "the interpolation grid updates automatically once new cited anchors
     are added." Fixed by rolling the grid's end up to the next on-cycle
     date whenever df.index.max() isn't already on-cycle, so any cited
@@ -449,7 +455,7 @@ def cu_acid_weekly_interpolated() -> pd.DataFrame:
 
 # ---------------------------------------------------------------------------
 # 3. FX -- USD/CNY, period-matched (replaces the old flat 7.1 constant used
-#    for every quarter 2023-2026 in real_data_check.py; see README.md's
+#    for every quarter 2023-2026 in real_data_check.py; see the earlier README's
 #    changelog -- that was flagged as a known limitation and is fixed here).
 #    2026 values are averages of daily closes reported by exchangerates.org
 #    / exchange-rates.org / valutafx.com (checked 2026-09-16); 2023-2025
@@ -523,12 +529,14 @@ KAMOA_KAKULA_QUARTERLY = {
         "acid_production_kt": 117.871,
         "acid_sold_kt": 107.700,
         "contract_price_usd_t": 725.0,     # "new contract prices up >50% year-to-date"
-        "realized_acid_price_usd_t": None,  # Ivanhoe's release did not give a clean Q1 weighted-average REALIZED price (only the new contract level) -- left NaN rather than assumed equal to the contract price. See STRATEGY_NOTE.md.
+        "realized_acid_price_usd_t": 467.0,  # Ivanhoe Q1 release (2026-05-06): 107,700 t sold to six offtakers at an average realized price of $467/t. (Earlier versions of this file said no Q1 realized price was disclosed -- that was wrong; corrected 2026-10-01.)
         "acid_cushion_ratio": round(0.32 / 0.27, 4),   # 118.5% -- acid MORE than covered smelter opex in Q1
         "smelter_utilisation_pct": 60,
-        "note": "Ivanhoe Mines Q1 2026 results (2026-05-06 release). Smelter ramped "
-                "to ~60% capacity during the quarter, having produced first anodes "
-                "in late Q4 2025.",
+        "note": "Ivanhoe Mines Q1 2026 results (2026-05-06 release). Smelter has run at "
+                "~60% of capacity since mid-February, having produced first anodes "
+                "in late Q4 2025. Per the Q2 release, Q1 smelter opex ($0.27/lb) was "
+                "understated by the PARTIAL CAPITALISATION of smelter operating costs "
+                "in Q1 -- so Q1's 118.5% coverage is flattered by accounting.",
     },
     "2026-Q2": {
         "smelter_opex_usd_lb": 0.41,
@@ -538,13 +546,18 @@ KAMOA_KAKULA_QUARTERLY = {
         "realized_acid_price_usd_t": 465.0,
         "contract_price_usd_t": 840.0,     # July/August contracts, "~80% higher" than the Q2 realized average
         "acid_cushion_ratio": round(0.39 / 0.41, 4),   # 95.1% -- acid almost, not quite, covered smelter opex in Q2
-        "note": "Ivanhoe Mines Q2 2026 results (2026-07-30 release); this is also "
+        "note": "Ivanhoe Mines Q2 2026 results (2026-07-29 release); this is also "
                 "the exact figure the source article cites for Kamoa-Kakula. "
-                "Smelter opex rose from $0.27/lb to $0.41/lb in Q2 (higher "
-                "utilisation ramp-up costs); acid credit rose only $0.27 -> $0.39, "
-                "not enough to keep pace -- this is the quarter-over-quarter "
-                "cushion-narrowing visible in Kamoa's OWN disclosed numbers, "
-                "before the SMM index-level shrinkage becomes visible in Q3.",
+                "Realised acid price was UNCHANGED q/q ($467 -> $465/t; the "
+                "release says so explicitly). Smelter opex per lb rose $0.27 -> "
+                "$0.41 because, per the release, Q1 opex was understated by the "
+                "partial capitalisation of smelter operating costs in Q1 -- not "
+                "because of ramp-up (utilisation was ~60% in both quarters) and "
+                "not because of acid prices. Acid credit per lb rose $0.32 -> $0.39 "
+                "(+22%: more acid sold per lb of copper produced, price flat). "
+                "So the Q1->Q2 coverage dip (118.5% -> 95.1%) is an accounting/"
+                "volume effect and says nothing about the acid price; see "
+                "KAMOA_FORWARD_INDICATION and strategy_layer.kamoa_bridge().",
     },
     "2026-Q3": {
         "smelter_opex_usd_lb": None,   # not yet reported -- Ivanhoe typically reports Q3 in late Oct/Nov
@@ -559,6 +572,68 @@ KAMOA_KAKULA_QUARTERLY = {
                 "acid_cushion_monitor.py).",
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# 4b. Kamoa-Kakula forward indication (added 2026-10-01). Management said on
+#     the Q2 earnings call (2026-07-30) that at contract prices the acid
+#     by-product credit "could approach $0.60 per pound in the third quarter,
+#     compared with $0.38 per pound in the second quarter". Source is a
+#     MarketBeat summary of the call (secondary; not re-checked against the
+#     transcript) -- the Q2 RELEASE itself (Ivanhoe, 2026-07-29) only discloses
+#     the $0.39/lb Q2 credit, the $465/t Q2 realized price ("unchanged
+#     quarter-on-quarter") and the ~$840/t Jul/Aug contract level (+80%).
+#     This matters analytically: it means Kamoa's acid/opex coverage is
+#     expected to WIDEN in Q3 (ex-China price up ~80% q/q) while China's
+#     domestic cushion shrinks -- a regional divergence, not a global
+#     "shrinking cushion".
+# ---------------------------------------------------------------------------
+KAMOA_FORWARD_INDICATION = {
+    "q3_acid_credit_usd_lb_mgmt": 0.60,
+    "q2_acid_credit_usd_lb_mgmt_quote": 0.38,    # management's spoken figure; the release says 0.39 -- immaterial
+    "q2_acid_sold_t": 119603,                   # Ivanhoe Q2 release
+    "q2_smelter_utilisation_pct": 60,           # Q2 release: ~60% of capacity since mid-February; further ramp-up constrained by concentrate feed
+    "source": "Ivanhoe Mines Q2 2026 results release (2026-07-29); Q2 earnings call 2026-07-30 (MarketBeat summary, 2026-08-01 -- secondary; the $0.60/lb figure is NOT in the release text)",
+    "status": "management indication, not a reported result; Q3 results expected late Oct/Nov 2026",
+}
+
+# ---------------------------------------------------------------------------
+# 4c. Acid quote-basis facts (added 2026-10-01).
+#     * SMM's provincial USD acid series (e.g. Shandong SMM-CU-SA-007, Inner
+#       Mongolia SMM-CU-SA-014) state in their specification: "USD price is
+#       exclusive of 13% VAT". The RMB index this project converts to USD is
+#       the NATIONAL index (SMM-CU-SA-001); its RMB VAT basis is not stated
+#       in anything this project could retrieve. Domestic Chinese spot quotes
+#       are usually VAT-inclusive, so the project's USD acid price may be
+#       overstated by up to 13%. Treated as an open definitional sensitivity
+#       (strategy_layer.definition_sensitivity), NOT silently applied.
+#     * SMM's own convention: RC is 10% of TC (RC in cents/lb = TC in $/dmt /
+#       10) -- "In international practice, the value of RC is fixed at 10% of
+#       the TC value" (SMM, 'Launch of SMM Copper Concentrate Index' notice).
+#       The project's TC-only drag therefore omits roughly a further ~55% of
+#       the treatment-charge drag (RC, per dmt of concentrate).
+# ---------------------------------------------------------------------------
+ACID_QUOTE_BASIS = {
+    "vat_rate_cn": 0.13,
+    # SMM's own convention (checked 2026-10-02 on metal.com price pages): the ORIGINAL RMB price includes 13% VAT and
+    # the USD series is derived by deducting it -- e.g. Inner Mongolia EXW: original CNY 785/t = USD 111.19 VAT-included
+    # = USD 98.40 VAT-excluded; SMM-CU-SA-001 (the national index, USD page): "13% VAT deducted for USD pricing".
+    # The national index's RMB page itself was not retrieved, so VAT-inclusive RMB is INFERRED from that convention.
+    "smm_usd_series_vat": "exclusive of 13% VAT (SMM price pages: 'VAT Rate: 13% VAT deducted for USD pricing')",
+    "national_cny_index_vat_basis": "VAT-INCLUSIVE (inferred from SMM's convention; direct RMB page not retrieved)",
+    "model_headline_basis": "ex-VAT: acid_usd_t = acid_cny_t / 1.13 / USD_CNY (VAT is passed to the tax authority, not smelter revenue)",
+    "rc_to_tc_convention": 0.10,
+}
+
+# Sulphur (acid feedstock) -- SMM Sulphur EXW Shandong, RMB/t, cited weekly
+# averages found in SMM's own acid weekly reviews (2026-07-03, 2026-07-31).
+# Used ONLY for a dated feedstock-parity indicator (see strategy_layer); not
+# refreshed since 2026-07-31 -- flagged stale in every output that uses it.
+SULPHUR_EXW_SHANDONG_RMB_T = [
+    ("2026-07-03", 9150.0, "cited", "SMM Sulphuric Acid Weekly Review 2026-07-03: range 9,000-9,300, avg 9,150 (+~950 WoW); Kazakhstan suspended sulphur exports from 2026-06-27, Russia's export ban extended to end-2026."),
+    ("2026-07-31", 9103.5, "cited", "SMM Sulphuric Acid Weekly Review 2026-07-31: range 8,957-9,250, avg 9,103.5 (-350 WoW)."),
+]
+T_SULPHUR_PER_T_98_ACID = round(0.98 * 32.06 / 98.08, 4)   # stoichiometry: S + 1.5 O2 + H2O -> H2SO4 ; 0.3203 t S per t of 98% acid
 
 
 # ---------------------------------------------------------------------------

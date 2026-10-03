@@ -5,7 +5,7 @@ SECONDARY / cross-metal real dataset (see copper_acid_data.py, now the
 PRIMARY real-data source for this project's headline copper acid-cushion
 thesis -- this file's zinc-vs-copper quarterly comparison is corroborating
 evidence, not the central test; see model_a.py's module docstring and
-README.md's 2026-09-16 changelog for the full reasoning).
+the earlier README's 2026-09-16 changelog for the full reasoning).
 
 A SMALL, SPARSE, REAL dataset -- not synthetic -- built from publicly
 reported figures, to stress-test the (zinc-vs-copper) thesis against what
@@ -68,7 +68,7 @@ single settlement price (2297.0) for 93% of a 2023-2026 sample -- 5 of 6
 quarters used here had exactly one unique value for the entire quarter.
 Switched to FRED's PZINCUSDM (IMF "Global price of Zinc", monthly,
 verified real), which needs no daily-liquidity assumption at all. See
-data_loaders.load_fred_zinc and STRATEGY_NOTE.md for the full account.
+data_loaders.load_fred_zinc and the earlier strategy note for the full account.
 
 CHANGELOG -- 2026-09-15 review:
   - QUARTERS extended with "2026-Q1" and "2026-Q3" now that real daily
@@ -98,7 +98,7 @@ CHANGELOG -- 2026-09-15 review:
     averaged through.
 
 CHANGELOG -- 2026-09-16 review (this project's pivot to the copper
-acid-cushion thesis; see README.md):
+acid-cushion thesis; see docs/METHODOLOGY.md):
   - This file's role is now SECONDARY -- corroborating cross-metal
     evidence, not the central test. copper_acid_data.py / model_a.
     run_model_a_copper_acid_cushion() / acid_cushion_monitor.py are
@@ -120,6 +120,8 @@ acid-cushion thesis; see README.md):
     rates used.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # allow `python extras/<script>.py` from the repo root
 import os
 
 import numpy as np
@@ -212,7 +214,7 @@ EVENT_WINDOW_NOTES = {
 # Net effect: the DIRECTION and rough MAGNITUDE of the TC collapse and the
 # acid-price move (surge, then narrowing -- see copper_acid_data.py) are
 # real. Exact dollar figures inherit uncertainty from every uncited cell
-# above PLUS the uncalibrated SmelterParams defaults (see STRATEGY_NOTE.md)
+# above PLUS the uncalibrated SmelterParams defaults (see the earlier strategy note)
 # -- read them as "this shape is real, this precision is not" throughout.
 _RAW = {
     # date          zn_price  cu_price  zn_tc  cu_tc  acid_cny  ag_price  energy
@@ -282,7 +284,7 @@ REAL_DATA["acid_price"] = [
 REAL_DATA.loc["2026-Q1", "energy_price"] = 70.0
 REAL_DATA.loc["2026-Q3", "energy_price"] = 70.0
 
-_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 _invented = {"zn_price": list(QUARTERS), "cu_price": list(QUARTERS), "silver_price": list(QUARTERS)}
 _upgraded = {}   # col -> [quarters actually upgraded to real data]
 _stale = {}      # col -> [quarters where a real feed existed but was flat/stale]

@@ -40,7 +40,7 @@ from thesis_monitor import MonitorConfig, build_monitor
 # Representative-smelter parameters. UPGRADED FROM PURE PLACEHOLDERS on
 # review: acid_yield and copper's metal_grade are now grounded in cited
 # figures, not invented -- everything else here is still a rule-of-thumb
-# or unsourced, and is labelled as such. See STRATEGY_NOTE.md for the full
+# or unsourced, and is labelled as such. See the earlier strategy note for the full
 # calibration-confidence breakdown.
 #
 #   acid_yield (t acid / t CONCENTRATE) -- derived, not invented:
@@ -85,13 +85,16 @@ from thesis_monitor import MonitorConfig, build_monitor
 # variants (they don't touch acid_yield at all). Model B now also reports
 # an *empirical* (OLS-fit) version of this sensitivity, computed on each
 # combination's own realized margin/acid-price series, which CAN vary --
-# see model_b.py and README.md's changelog.
+# see model_b.py and the earlier README's changelog.
 DEFAULT_ZN_PARAMS = SmelterParams(
     metal_grade=0.50, payable_fraction=0.85, acid_yield=1.00,
     silver_yield_oz=0.15, conversion_cost=220.0, energy_per_t=0.35, premium=15.0,
 )
 DEFAULT_CU_PARAMS = SmelterParams(
     metal_grade=0.255, payable_fraction=0.96, acid_yield=0.83,
+    # gold_yield_oz is a placeholder: NO gold price is loaded, so gold contributes 0. Deliberately left that way --
+    # 0.002 oz/t x any plausible gold price (<= $6,000/oz) is < $12/t of concentrate, it moves only the uncalibrated
+    # margin LEVEL, never the cushion ratio (acid credit / |TC|), and over any window its change is ~$1/t.
     silver_yield_oz=0.05, gold_yield_oz=0.002, conversion_cost=260.0,
     energy_per_t=0.40, premium=20.0,
 )
@@ -182,9 +185,16 @@ def run_model_a_copper_acid_cushion(
     tc_status = cad.cu_tc_weekly_interpolated()["status"]
     acid_cny = cad.cu_acid_weekly_interpolated()["acid_cny_t"]
     acid_status = cad.cu_acid_weekly_interpolated()["status"]
+    # The SMM national RMB acid index is (by SMM's convention) quoted INCLUDING 13% VAT; VAT is not smelter revenue,
+    # so the model converts the ex-VAT price. `acid_usd_t_quoted` keeps the as-quoted conversion for sensitivities.
+    _vat = cad.ACID_QUOTE_BASIS["vat_rate_cn"]
     acid_usd = pd.Series(
-        [cad.cny_to_usd_by_date(v, d) for d, v in acid_cny.items()],
+        [cad.cny_to_usd_by_date(v / (1.0 + _vat), d) for d, v in acid_cny.items()],
         index=acid_cny.index, name="acid_usd_t",
+    )
+    acid_usd_quoted = pd.Series(
+        [cad.cny_to_usd_by_date(v, d) for d, v in acid_cny.items()],
+        index=acid_cny.index, name="acid_usd_t_quoted",
     )
 
     prices = load_daily_metal_prices(metal_prices_path)
@@ -206,6 +216,7 @@ def run_model_a_copper_acid_cushion(
         "tc_status": tc_status,
         "acid_cny_t": acid_cny,
         "acid_usd_t": acid_usd,
+        "acid_usd_t_quoted": acid_usd_quoted,
         "acid_status": acid_status,
         "cu_price": cu_price,
         "silver_price": silver_price,

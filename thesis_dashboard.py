@@ -7,14 +7,12 @@ thesis_monitor.py's original boolean-condition machinery is UNCHANGED and
 still used for the SECONDARY zinc-vs-copper cross-metal check (see
 model_a.py's module docstring); it was never wrong for that narrower,
 genuinely binary-ish question ("is zinc curtailing before copper"). It was
-the wrong shape for THIS thesis, which the review was explicit about:
-
-    "Замість '4 of 5 conditions met' я б зробив: Thesis Dashboard" --
-    7 categorical states, each with 3 qualitative buckets, plus a
-    narrative status block. Forcing PMI/COMEX/zinc into pass/fail
-    conditions ("the demand signal isn't clean" -- the source article's own
-    words) would misrepresent evidence that is genuinely mixed as if it
-    were decisive.
+the wrong shape for THIS thesis: a Thesis Dashboard of 7 categorical
+states, each with 3 qualitative buckets, plus a narrative status block.
+Forcing PMI/COMEX/zinc into pass/fail conditions ("the demand signal isn't
+clean" -- the source article's own words) would misrepresent evidence that
+is genuinely mixed as if it were decisive. Falsification conditions for the
+thesis as a whole live in strategy_layer.falsification_checks().
 
 Each `condition_*` function below returns (state: str, detail: str) --
 the categorical label plus a one-line, cited reason, so the label is never
