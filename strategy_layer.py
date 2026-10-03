@@ -374,17 +374,29 @@ def falsification_checks(weekly: pd.DataFrame, params: SmelterParams) -> list[di
     """Pre-registered conditions. 'status' is one of NOT TRIGGERED / TRIGGERED /
     NOT TESTABLE (no fresh data) / PENDING (scheduled event) / MANUAL (event I
     cannot observe in code). Thresholds are judgment levels, not calibrated."""
+    both_cited = weekly["tc_status"].isin(["cited", "cited-approx"]) & weekly["acid_status"].isin(
+        ["cited", "cited-approx"]
+    )
+    r_cited = weekly.loc[both_cited, "acid_cushion_ratio"].dropna()
     r = weekly["acid_cushion_ratio"]
     tc = weekly["tc_usd_dmt"]
     asof = weekly.index[-1].date()
     checks = []
 
-    d1, d2 = r.diff().iloc[-1], r.diff().iloc[-2]
+    # C1 is defined on consecutive PRINTS, not on interpolated grid weeks: using r.diff() on the full Friday grid
+    # would let a grid-fill week start or stop "erosion" without a new SMM observation.
+    if len(r_cited) >= 3:
+        d1, d2 = float(r_cited.diff().iloc[-1]), float(r_cited.diff().iloc[-2])
+        c1_current = (f"last two cited-print changes ({r_cited.index[-3].date()} -> {r_cited.index[-2].date()} -> "
+                      f"{r_cited.index[-1].date()}): {d2*100:+.1f}pp, {d1*100:+.1f}pp")
+        c1_status = "TRIGGERED" if (d1 > 0 and d2 > 0) else "NOT TRIGGERED"
+    else:
+        c1_current, c1_status = "not enough cited prints to evaluate", "NOT TESTABLE"
     checks.append({
         "id": "C1", "direction": "weakens", "leg": "mechanism",
         "condition": "Cushion ratio rises on two consecutive weekly prints (erosion stops)",
-        "current": f"last two weekly changes: {d2*100:+.1f}pp, {d1*100:+.1f}pp",
-        "status": "TRIGGERED" if (d1 > 0 and d2 > 0) else "NOT TRIGGERED", "as_of": asof,
+        "current": c1_current,
+        "status": c1_status, "as_of": asof,
     })
     rec_low = tc.min()
     checks.append({
@@ -393,13 +405,21 @@ def falsification_checks(weekly: pd.DataFrame, params: SmelterParams) -> list[di
         "current": f"TC {tc.iloc[-1]:.2f} vs record low {rec_low:.2f} (recovery {tc.iloc[-1]-rec_low:+.2f})",
         "status": "TRIGGERED" if (tc.iloc[-1] - rec_low) >= 25 else "NOT TRIGGERED", "as_of": asof,
     })
-    below_half = int((r.iloc[-4:] < CUSHION_EXHAUSTED_BELOW).sum())
+    last4 = r.iloc[-4:]
+    below_half = int((last4 < CUSHION_EXHAUSTED_BELOW).sum())
+    four_consecutive = len(last4) == 4 and bool((last4 < CUSHION_EXHAUSTED_BELOW).all())
+    if four_consecutive:
+        c3_status = "IN SCOPE -- check for documented dated curtailment"
+    elif float(r.iloc[-1]) < CUSHION_EXHAUSTED_BELOW:
+        c3_status = "WATCHING (below 50%, but not yet 4 consecutive weeks)"
+    else:
+        c3_status = "NOT YET IN SCOPE (cushion >= 50%)"
     checks.append({
         "id": "C3", "direction": "tests physical leg", "leg": "physical response",
         "condition": "Cushion < 50% for 4 consecutive weeks WITHOUT documented smelter curtailment => "
                      "acid is not binding in practice; the physical leg fails",
-        "current": f"cushion {r.iloc[-1]*100:.1f}%; weeks below 50% in last 4: {below_half}",
-        "status": "NOT YET IN SCOPE (cushion > 50%)" if r.iloc[-1] >= CUSHION_EXHAUSTED_BELOW else "IN SCOPE -- check for cuts",
+        "current": f"cushion {r.iloc[-1]*100:.1f}%; weeks below 50% in last 4: {below_half}; 4 consecutive: {four_consecutive}",
+        "status": c3_status,
         "as_of": asof,
     })
     last_reg = cad.REGIONAL_ACID_BENCHMARK["weekly"][-1][0]
@@ -407,7 +427,7 @@ def falsification_checks(weekly: pd.DataFrame, params: SmelterParams) -> list[di
         "id": "C4", "direction": "weakens", "leg": "regional divergence",
         "condition": "EXW DRC/Zambia benchmarks fall toward China-domestic levels (divergence closes)",
         "current": f"last regional print {last_reg} (flat 5+ weeks; thin-market ambiguity)",
-        "status": "NOT TESTABLE (no print since " + last_reg + ")", "as_of": last_reg,
+        "status": "NOT TESTABLE (no print since " + last_reg + ")", "as_of": pd.Timestamp(last_reg).date(),
     })
     checks.append({
         "id": "C5", "direction": "strengthens / weakens", "leg": "company validation",
@@ -422,11 +442,12 @@ def falsification_checks(weekly: pd.DataFrame, params: SmelterParams) -> list[di
         "current": "China H2SO4 exports ~117kt (May) -> ~1kt (Jun), near zero into Jul",
         "status": "MANUAL (policy event)", "as_of": asof,
     })
+    last_s = cad.SULPHUR_EXW_SHANDONG_RMB_T[-1][0]
     checks.append({
         "id": "C7", "direction": "weakens", "leg": "acid-market regime",
         "condition": "Sulphur-burner curtailments / fertiliser restocking lift China acid despite the halt",
-        "current": "sulphur series last refreshed 2026-07-31 (stale)",
-        "status": "NOT TESTABLE (stale sulphur data)", "as_of": "2026-07-31",
+        "current": f"sulphur series last refreshed {last_s} (stale vs the current acid print)",
+        "status": "NOT TESTABLE (stale sulphur data)", "as_of": pd.Timestamp(last_s).date(),
     })
     return checks
 
@@ -560,7 +581,7 @@ def _selfcheck_all():
     for start, _ in REFERENCE_WINDOWS.values():
         a = attribute_ratio_change(weekly, start)
         direct = float(np.log(a["ratio_end"] / a["ratio_start"]))
-        assert abs(direct - a["log_change_total"]) < 2e-3, (start, direct, a["log_change_total"])
+        assert abs(direct - a["log_change_total"]) < 1e-9, (start, direct, a["log_change_total"])
         assert abs(a["acid_share"] + a["tc_share"] - 1.0) < 1e-9
 
     # (2) margin attribution is additive (residual ~ 0)
@@ -571,9 +592,9 @@ def _selfcheck_all():
     # (3) counterfactuals coincide with actual at the reference date
     cf = counterfactual_paths(weekly, params, "2026-07-03")
     first = cf.iloc[0]
-    assert abs(first["cf_flat_acid"] - first["actual"]) < 2e-3
+    assert abs(first["cf_flat_acid"] - first["actual"]) < 1e-9
     assert abs(first["cf_flat_tc"] - first["actual"]) < 1e-9
-    assert abs(first["margin_cf_flat_acid"] - first["margin_actual"]) < 0.2
+    assert abs(first["margin_cf_flat_acid"] - first["margin_actual"]) < 1e-9
     # holding acid flat can only raise the latest cushion vs actual when acid fell
     assert cf.iloc[-1]["cf_flat_acid"] > cf.iloc[-1]["actual"]
 
@@ -582,8 +603,8 @@ def _selfcheck_all():
     fx = fx_for(weekly.index[-1])
     mat = regime_matrix(params, [float(latest["tc_usd_dmt"])], [float(latest["acid_cny_t"])], fx,
                         float(latest["cu_price"]), float(latest["silver_price"]), energy)
-    assert abs(mat["ratio"].iloc[0, 0] - latest["acid_cushion_ratio"]) < 2e-3
-    assert abs(mat["margin"].iloc[0, 0] - latest["total_margin"]) < 0.5
+    assert abs(mat["ratio"].iloc[0, 0] - latest["acid_cushion_ratio"]) < 1e-9
+    assert abs(mat["margin"].iloc[0, 0] - latest["total_margin"]) < 1e-6
 
     # (5) frontier: at the frontier acid price the ratio is exactly 100%
     f = cushion_frontier_acid_cny(-200.0, params, fx)
@@ -592,7 +613,7 @@ def _selfcheck_all():
     # (6) definition variant collapses to the headline when RC excluded, VAT stripped, default yield
     vat = cad.ACID_QUOTE_BASIS["vat_rate_cn"]
     v = cushion_ratio_variant(latest["acid_usd_t_quoted"], latest["tc_usd_dmt"], params, vat=vat)
-    assert abs(v - latest["acid_cushion_ratio"]) < 2e-3
+    assert abs(v - latest["acid_cushion_ratio"]) < 1e-9
     # RC (negative) only ADDS to the drag, so including it can only lower the ratio
     assert cushion_ratio_variant(latest["acid_usd_t_quoted"], latest["tc_usd_dmt"], params, include_rc=True, vat=vat) < v
     # not stripping VAT can only raise the ratio

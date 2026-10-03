@@ -40,12 +40,12 @@ SMM weekly prints have no free API: each point in `copper_acid_data.py` was tran
 | `margin_model.py`, `model_a.py`, `model_b.py`, `model_c.py`, `thesis_dashboard.py`, `thesis_monitor.py`, `data_loaders.py`, `smelter_calibration.py` | Supporting model code used by the monitor. |
 | `data/` | Input data files. |
 | `docs/METHODOLOGY.md` | Technical detail: inputs, data inventory, limitations. |
-| `extras/` | **Optional, not part of the analysis:** the original zinc-vs-copper experiment (`real_data_check.py`, `demo.py` with synthetic data in `extras/synthetic_demo/`) and data-download scripts. |
+| `extras/` | **Optional, not part of the analysis:** the original zinc-vs-copper experiment (`extras/real_data_check.py`, `extras/demo.py` — which writes its synthetic-data outputs to `extras/synthetic_demo/` when run) and data-download scripts. |
 
 ## What this is not
 
 Not a trading strategy: no backtest, Sharpe or signal anywhere. Not a forecast of acid, TC or copper prices. Not any real smelter's P&L — the model uses benchmark index levels for a representative custom smelter with uncalibrated cost inputs; the absolute margin level should not be quoted. Regime cut-offs and falsification thresholds are declared judgment levels, not fitted.
 
-## Honest data status (1 Oct 2026)
+## Honest data status (3 Oct 2026)
 
-16 of 39 weekly grid points have both series as cited prints; every headline statistic uses cited endpoints only. EXW DRC/Zambia has not printed since 4 Sep and the sulphur series is stale since 31 Jul — both are flagged wherever used. Kamoa's Q3 figures are a management indication, not a reported result. Details: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).
+16 of 39 weekly grid points have both series as cited prints; every headline statistic uses cited endpoints only. EXW DRC/Zambia has not printed since 4 Sep and the sulphur series is stale since 31 Jul — both are flagged wherever used. SMM has since published a week-ending-30-Sep print (TC -231.68) that is **not yet included** — all numbers here run through the 24 Sep prints. Kamoa's Q3 figures are a management indication, not a reported result. Details: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).

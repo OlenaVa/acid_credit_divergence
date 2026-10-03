@@ -64,8 +64,8 @@ def plot_monitor(weekly: pd.DataFrame, out_path="output/copper_acid_cushion.png"
     ax.scatter(weekly.index[obs_ac], weekly["acid_usd_t"][obs_ac], color=RED, s=16, marker="s", zorder=3)
     ax.axvline(pd.Timestamp("2026-07-03"), color="grey", lw=0.8, ls=":")
     ax.text(pd.Timestamp("2026-07-05"), ax.get_ylim()[0] + 4, "acid peak\n3 Jul", fontsize=7, color="grey")
-    ax.set_ylabel("Acid, USD/t (as quoted)")
-    ax.set_title("China copper-smelting sulphuric acid index, converted at quarterly-average FX", fontsize=9.5)
+    ax.set_ylabel("Acid, USD/t (ex-VAT, model basis)")
+    ax.set_title("China copper-smelting sulphuric acid index, VAT stripped then converted at quarterly-average FX", fontsize=9.5)
 
     ax = axes[2]
     r = weekly["acid_cushion_ratio"] * 100
@@ -85,7 +85,7 @@ def plot_monitor(weekly: pd.DataFrame, out_path="output/copper_acid_cushion.png"
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
 
     fig.text(0.01, 0.005, "Markers = cited SMM prints; the thin line includes linearly interpolated weeks. "
-             "Regime bands are judgment levels (not calibrated).", fontsize=6.5, color="#555555")
+                          "Regime bands are judgment levels (not calibrated).", fontsize=6.5, color="#555555")
     plt.tight_layout(rect=(0, 0.015, 1, 0.97))
     plt.savefig(out_path, dpi=130)
     plt.close(fig)
@@ -155,7 +155,7 @@ def plot_transmission_map(s: dict, out_path="output/01_transmission_map.png") ->
         arrow(xs[i] + W + 0.3, by + H / 2, xs[i + 1] - 0.3, by + H / 2)
 
     box(5, 0.3, 90, 4.5, "MARKET EXPRESSION (to monitor, not a trade): China cathode output, Yangshan premium, TC path, CSPT actions, "
-        "integrated vs custom smelter equities. No liquid exchange-traded acid hedge identified -- untested.", GREY)
+                         "integrated vs custom smelter equities. No liquid exchange-traded acid hedge identified -- untested.", GREY)
 
     # legend
     lx = 1
@@ -311,8 +311,8 @@ def plot_regional(s: dict, out_path="output/04_regional_divergence.png") -> str:
     ax2.set_ylabel("Kamoa acid credit / smelter opex, %")
     ax2.set_title("Kamoa-Kakula coverage: Q2 dip is not a price effect; Q3 widens", fontsize=9.5)
     ax2.text(0.02, 0.96, f"Q1->Q2: realised acid price {k['acid_price_change_pct']*100:+.1f}%, credit/lb {k['credit_change_pct']*100:+.0f}%,\n"
-             f"opex/lb {k['opex_change_pct']*100:+.0f}% (Q1 opex partly capitalised, per Ivanhoe). Q3 held at Q2 opex\n"
-             "(assumption). Different denominator from the China |TC| ratio -- not comparable.",
+                         f"opex/lb {k['opex_change_pct']*100:+.0f}% (Q1 opex partly capitalised, per Ivanhoe). Q3 held at Q2 opex\n"
+                         "(assumption). Different denominator from the China |TC| ratio -- not comparable.",
              transform=ax2.transAxes, fontsize=7.2, va="top", color="#444444")
     _foot(fig, "Sources: SMM (China acid index; EXW DRC/Zambia launched 2026-06-05), Ivanhoe Mines Q1/Q2-2026 releases (2026-05-06, 2026-07-29) and earnings call (2026-07-30, "
                "secondary). China ex-VAT = SMM RMB index / 1.13.")

@@ -103,11 +103,12 @@ DEFAULT_CU_PARAMS = SmelterParams(
 # matching SmelterParams.energy_per_t) -- STILL UNCALIBRATED. No free
 # public daily/weekly industrial-electricity series for Chinese copper
 # smelters was found for this project (see data_loaders.py's source
-# table); this is a rule-of-thumb constant, not a fetched series. Its
-# effect on the acid-cushion outputs is modest (energy is ~2-4% of total
-# smelter margin at these TC/acid levels -- see acid_stress_test's output
-# if you want to check that claim directly on today's numbers) but it is
-# still a real gap, not a solved input.
+# table); this is a rule-of-thumb constant, not a fetched series. At the
+# DEFAULT_CU_PARAMS energy intensity it is $28/t concentrate (0.40 MWh x
+# $70). That is small next to the TC and acid legs that drive the cushion
+# ratio (the ratio itself does not use energy at all). It is material next
+# to the uncalibrated conversion-cost assumption ($260/t), which is why
+# absolute treatment-margin levels are not reported.
 ENERGY_PRICE_USD_MWH = 70.0
 
 
@@ -122,19 +123,11 @@ def _pct_change_over(series: pd.Series, weeks: int) -> float:
 
 def _status_at(status_series: pd.Series, weeks: int) -> str:
     """Status ('cited' / 'cited-approx' / 'interpolated (grid-fill)') of
-    the comparison point `weeks` steps back -- added 2026-09-26 (external
-    review point 3). The LATEST point in every trend metric below is
-    always 'cited' (see copper_acid_data.py's own self-check), but the
-    OTHER end of a %/level change is not guaranteed to be -- e.g. the
-    2026-07-24 point used for every current 9-week comparison is
-    'interpolated (grid-fill)' for both TC and acid (no SMM print landed
-    exactly on that Friday). That does not make the 9-week figures wrong
-    -- interpolating a genuinely elapsed historical gap for a trend
-    comparison is standard practice, not a look-ahead problem (see
-    `_interpolate_to_grid()`'s docstring in copper_acid_data.py) -- but a
-    reader should be able to tell which end of the comparison is a real
-    print and which is a smoothed estimate, rather than both implicitly
-    reading as equally solid."""
+    the comparison point `weeks` steps back. The LATEST point in every
+    trend metric is expected to be a cited print (enforced in
+    copper_acid_data.py), but the other end of a %/level change is not
+    guaranteed to be. Do not hard-code which week that is -- it moves as
+    the grid extends."""
     if len(status_series) <= weeks:
         return "n/a"
     return status_series.iloc[-1 - weeks]
@@ -270,17 +263,14 @@ def run_model_a_copper_acid_cushion(
         "tc_1m_usd_dmt_change": _status_at(weekly["tc_status"], 4),
         "tc_9w_usd_dmt_change": _status_at(weekly["tc_status"], 9),
     }
-    provenance_note = (
-        "9W/13W trend figures compare the latest CITED week against a "
-        "reference week that may itself be interpolated -- see "
-        "`trend_basis` above for exactly which figures that applies to "
-        "right now (as of 2026-09-24/25, it's the 9-week figures "
-        "specifically: their reference point, 2026-07-24, has no direct "
-        "SMM print and is 'interpolated (grid-fill)' for both TC and "
-        "acid; the 1-month and 3-month figures both land on real cited "
-        "prints) -- the direction and rough magnitude are meaningful, the "
-        "last significant figure is not."
-    )
+    flagged = [k for k, v in trend_basis.items() if "interpolated" in str(v)]
+    if flagged:
+        provenance_note = (
+            "Some trend figures compare the latest cited week against a reference week that is interpolated: "
+            f"{', '.join(flagged)}. Direction and rough magnitude are meaningful; the last significant figure is not."
+        )
+    else:
+        provenance_note = "All trend reference points currently land on cited or cited-approx SMM prints (no interpolated reference week)."
 
     return {
         "weekly": weekly,

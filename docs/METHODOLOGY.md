@@ -53,6 +53,7 @@ Series definitions the model does **not** know: freight, handling, storage, the 
 `margin_model.SmelterParams` / `model_a.DEFAULT_CU_PARAMS`: metal grade 25.5% and acid yield are cited; **payable fraction (96%), conversion cost ($260/t), energy intensity (0.40 MWh/t), premium ($20/t) and the by-product yields are rule-of-thumb**; energy price is a flat $70/MWh placeholder. Consequences:
 
 - The margin **level** is not reported anywhere (it is dominated by the assumed conversion cost); only changes are, because the constants cancel.
+- Freeport calibration (`smelter_calibration.py`) is used only for acid yield and metal grade (0.828 t/t, 25.5%). The CSV's silver figure is company-wide silver sales divided by Miami smelter throughput (≈5.2 oz/t, not a plausible smelter yield), so the code rejects it (silver yield set to 0 with a printed warning); the model's silver input is the 0.05 oz/t placeholder.
 - The precious-metal credit is token: silver is priced (0.05 oz/t); a placeholder gold yield (0.002 oz/t) is defined but **no gold price is loaded**, so gold contributes zero. This is deliberate: at any plausible gold price it is < $12/t of concentrate (vs a TC of -$225 and an acid credit of ~$136), it cannot touch the cushion ratio, and its *change* over any window is ~$1/t. The margin level is not credible for other, much larger reasons (conversion cost, §4), so adding gold would add precision to an invented parameter.
 
 ## 5. Definition sensitivity (why the level is fragile)

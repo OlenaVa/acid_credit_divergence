@@ -93,8 +93,11 @@ CU_TC_WEEKLY_RAW = [
      "SMM Imported Copper Concentrate Index (weekly), -$154.76/dmt -- the 'previous' reading in the 2026-07-31 SMM weekly review (news.metal.com, 'Cobre Panama mine restart accelerates...'). This is the 9-week reference point of the headline trend figures; it was a grid-fill interpolation (-152.40) until 2026-10-01. Link: https://news.metal.com/en/newscontent/104036547-cobre-panama-mine-restart-accelerates-imported-copper-concentrate-spot-tcs-continue-to-deteriorate-smm-copper-concentrat"),
     ("2026-07-31", -159.37, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$159.37/dmt, down "
-     "$30.31/dmt from -$124.5/dmt on Jun 26 (news.metal.com; also the "
-     "source article's own citation). Link: https://news.metal.com/en/newscontent/104036547-cobre-panama-mine-restart-accelerates-imported-copper-concentrate-spot-tcs-continue-to-deteriorate-smm-copper-concentrat"),
+     "$4.61/dmt from the prior-week print of -$154.76 (24 Jul) and $34.92/dmt "
+     "from -$124.45 on 26 Jun (news.metal.com). An earlier note in this file "
+     "said 'down $30.31 from -$124.5 on Jun 26' -- that arithmetic does not "
+     "match these three cited prints (-124.5 -> -159.37 is -34.87). "
+     "Link: https://news.metal.com/en/newscontent/104036547-cobre-panama-mine-restart-accelerates-imported-copper-concentrate-spot-tcs-continue-to-deteriorate-smm-copper-concentrat"),
     ("2026-08-07", -173.91, "cited",
      "SMM Imported Copper Concentrate Index (weekly), -$173.91/dmt, down $14.54 from -$159.37 (news.metal.com, 'Imported Copper Concentrate TCs Fall Steadily...', SMM weekly review 2026-08-07). Replaces a grid-fill interpolation (-169.49) -- added 2026-10-01. Link: https://news.metal.com/newscontent/104048814-imported-copper-concentrate-tcs-fall-steadily-some-construction-and-development-projects-at-el-teniente-the-worlds-large"),
     ("2026-08-14", -175.37, "cited",
@@ -165,9 +168,11 @@ CU_ACID_WEEKLY_RAW = [
      "Smelter Cutbacks'; consistent with the H1-2026 analysis's separate "
      "'rose further to RMB 1,657/t in April'). Link: https://news.metal.com/newscontent/103881993-Sulphuric-Acid-Prices-Key-to-Copper-Smelter-Cutbacks-Amid-Collapsing-TCs"),
     ("2026-05-15", 1665.0, "cited",
-     "SMM China Copper Smelting Acid Index, RMB 1,665/t, up 83.7% from "
-     "the start of the year (news.metal.com, 'Copper Concentrate TCs "
-     "Break Through Negative Triple Digits')."),
+     "SMM China Copper Smelting Acid Index, RMB 1,665/t (news.metal.com, "
+     "'Copper Concentrate TCs Break Through Negative Triple Digits'). The "
+     "same article's 'up 83.7% from the start of the year' does not match "
+     "this file's start-of-year cited-approx print (919.5 -> 1,665 is +81.1%); "
+     "the 1,665 level is kept as the dated print, not the percentage claim."),
     ("2026-06-26", 1751.0, "cited",
      "SMM China Copper Smelting Acid Index, RMB 1,751/t -- implied by the 2026-07-03 SMM weekly review (index at RMB 1,789/t, 'up 38 yuan/mt WoW', "
      "news.metal.com). Replaces an earlier cited-approx midpoint placeholder of RMB 1,700/t -- corrected 2026-10-01."),
@@ -354,7 +359,7 @@ def _interpolate_to_grid(df: pd.DataFrame, value_col: str, freq="W-FRI") -> pd.D
     still_missing = out[value_col].isna()
     out.loc[still_missing, value_col] = smoothed_on_grid[still_missing]
     out["status"] = out["status"].fillna("interpolated (grid-fill)")
-    return out.ffill()
+    return out
 
 
 def _selfcheck_grid_never_drops_latest_point():
@@ -489,7 +494,10 @@ def cny_to_usd(value_cny: float, quarter_label: str) -> float:
         nearest = min(keys, key=lambda k: abs(pd.Period(k, "Q").ordinal - target_ord))
         rate = USD_CNY_QUARTERLY[nearest]
         print(f"WARNING: no USD/CNY rate for {quarter_label}; using nearest ({nearest} = {rate}).")
-    return round(value_cny / rate, 1)
+    # Do not round here: rounding USD/t to 1 decimal leaked into the weekly acid series, so the regime map
+    # (unrounded CNY/FX formula) and the monitor (rounded) disagreed at the 2e-3 level and the FX attribution
+    # picked up a spurious residual. Round only at display time.
+    return value_cny / rate
 
 
 def cny_to_usd_by_date(value_cny: float, date) -> float:
@@ -598,20 +606,22 @@ KAMOA_FORWARD_INDICATION = {
 }
 
 # ---------------------------------------------------------------------------
-# 4c. Acid quote-basis facts (added 2026-10-01).
-#     * SMM's provincial USD acid series (e.g. Shandong SMM-CU-SA-007, Inner
-#       Mongolia SMM-CU-SA-014) state in their specification: "USD price is
-#       exclusive of 13% VAT". The RMB index this project converts to USD is
-#       the NATIONAL index (SMM-CU-SA-001); its RMB VAT basis is not stated
-#       in anything this project could retrieve. Domestic Chinese spot quotes
-#       are usually VAT-inclusive, so the project's USD acid price may be
-#       overstated by up to 13%. Treated as an open definitional sensitivity
-#       (strategy_layer.definition_sensitivity), NOT silently applied.
+# 4c. Acid quote-basis facts (added 2026-10-01; VAT rule restated 2026-10-03
+#     so that this comment matches the code).
+#     * SMM's provincial USD acid series state "USD price is exclusive of 13%
+#       VAT". The national RMB index (SMM-CU-SA-001) is treated on the same
+#       convention: the HEADLINE model deducts 13% VAT
+#       (acid_usd_t = acid_cny_t / 1.13 / USD_CNY). The national RMB page itself
+#       was not retrieved, so a VAT-inclusive RMB quote is INFERRED from SMM's
+#       convention. The as-quoted (VAT-in) figure is kept as a sensitivity, not
+#       as the headline. (An earlier version of this comment said VAT was "NOT
+#       silently applied" -- that described a pre-headline-change draft.)
 #     * SMM's own convention: RC is 10% of TC (RC in cents/lb = TC in $/dmt /
 #       10) -- "In international practice, the value of RC is fixed at 10% of
 #       the TC value" (SMM, 'Launch of SMM Copper Concentrate Index' notice).
-#       The project's TC-only drag therefore omits roughly a further ~55% of
-#       the treatment-charge drag (RC, per dmt of concentrate).
+#       The project's TC-only drag therefore omits roughly a further ~54% of
+#       the treatment-charge drag (RC, per dmt of concentrate) at the current
+#       grade/payable assumptions.
 # ---------------------------------------------------------------------------
 ACID_QUOTE_BASIS = {
     "vat_rate_cn": 0.13,
@@ -631,6 +641,7 @@ ACID_QUOTE_BASIS = {
 # refreshed since 2026-07-31 -- flagged stale in every output that uses it.
 SULPHUR_EXW_SHANDONG_RMB_T = [
     ("2026-07-03", 9150.0, "cited", "SMM Sulphuric Acid Weekly Review 2026-07-03: range 9,000-9,300, avg 9,150 (+~950 WoW); Kazakhstan suspended sulphur exports from 2026-06-27, Russia's export ban extended to end-2026."),
+    ("2026-07-10", 8928.5, "cited", "SMM Sulphuric Acid Weekly Review, week ended 2026-07-10 (already quoted in the 2026-07-10 acid row): SMM Sulphur EXW Shandong weekly average RMB 8,928.5/t. Missing from this series until 2026-10-03."),
     ("2026-07-31", 9103.5, "cited", "SMM Sulphuric Acid Weekly Review 2026-07-31: range 8,957-9,250, avg 9,103.5 (-350 WoW)."),
 ]
 T_SULPHUR_PER_T_98_ACID = round(0.98 * 32.06 / 98.08, 4)   # stoichiometry: S + 1.5 O2 + H2O -> H2SO4 ; 0.3203 t S per t of 98% acid

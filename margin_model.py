@@ -654,11 +654,9 @@ def implied_acid_yield_and_buffer(
                                opex at that price; negative => it did not)
 
     Returns NaNs (not a crash) if realized_acid_price_per_t or the implied
-    yield is zero/None, since a quarter with no clean realized-price figure
-    (e.g. Kamoa's own Q1 2026, which discloses only a NEW CONTRACT price,
-    not a realized weighted average) genuinely cannot support this
-    calculation -- see KAMOA_KAKULA_QUARTERLY['2026-Q1'] in
-    copper_acid_data.py for exactly this case.
+    yield is zero/None. Ivanhoe's Q1 and Q2 2026 releases both disclose a
+    realized average ($467/t and $465/t); an earlier version of this
+    docstring said Q1 had no realized figure -- that was wrong.
     """
     if not realized_acid_price_per_t or pd.isna(realized_acid_price_per_t):
         return {"implied_acid_yield": float("nan"), "breakeven_acid_price": float("nan"),

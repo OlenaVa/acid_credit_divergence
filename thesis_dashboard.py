@@ -75,15 +75,22 @@ def condition_acid_cushion(cushion_ratio: float, cushion_9w_ppt: float, cfg: Das
 
 
 def condition_treatment_margin(margin_now: float, margin_9w_change: float, cfg: DashboardConfig = DashboardConfig()) -> tuple[str, str]:
+    # The ABSOLUTE margin level is deliberately not printed (conversion cost / energy / premium are uncalibrated
+    # assumptions); only the change over the window is reported. `margin_now` stays in the signature for callers.
     if margin_9w_change <= cfg.margin_deteriorate_9w_usd:
         return "DETERIORATING", (
-            f"Treatment margin (TC + free metal + byproducts - costs) at "
-            f"${margin_now:.0f}/t concentrate, down ${abs(margin_9w_change):.0f}/t "
-            f"over 9 weeks."
+            f"Treatment-margin CHANGE over 9 weeks: ${margin_9w_change:.0f}/t concentrate "
+            f"(absolute level omitted: conversion cost / energy / premium are uncalibrated)."
         )
     if margin_9w_change >= cfg.margin_improve_9w_usd:
-        return "IMPROVING", f"Treatment margin at ${margin_now:.0f}/t, up ${margin_9w_change:.0f}/t over 9 weeks."
-    return "STABLE", f"Treatment margin at ${margin_now:.0f}/t, roughly flat over 9 weeks."
+        return "IMPROVING", (
+            f"Treatment-margin CHANGE over 9 weeks: ${margin_9w_change:+.0f}/t concentrate "
+            f"(absolute level omitted: cost inputs are uncalibrated)."
+        )
+    return "STABLE", (
+        f"Treatment-margin CHANGE over 9 weeks: ${margin_9w_change:+.0f}/t concentrate, "
+        f"inside the +/-${cfg.margin_improve_9w_usd:.0f} band."
+    )
 
 
 def condition_physical_response() -> tuple[str, str]:

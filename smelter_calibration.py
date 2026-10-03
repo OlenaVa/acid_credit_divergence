@@ -29,6 +29,18 @@ def params_from_filing_row(row: pd.Series, metal: str) -> SmelterParams:
         raise ValueError("concentrate_processed_kt must be positive")
     acid_yield = float(row["sulfuric_acid_production_kt"]) / conc
     silver_yield_oz = float(row.get("silver_sales_koz", 0) or 0) * 1000.0 / (conc * 1000.0)
+    if silver_yield_oz > 0.5:
+        print(
+            f"WARNING: implied silver_yield_oz={silver_yield_oz:.2f} oz/t concentrate "
+            f"from silver_sales_koz / concentrate_processed_kt. That is not a "
+            f"plausible custom-smelter by-product yield (typically << 1 oz/t). "
+            f"For Freeport this almost certainly mixes COMPANY-WIDE silver sales "
+            f"with Miami smelter concentrate throughput -- do not calibrate "
+            f"SmelterParams.silver_yield_oz from this CSV. Acid yield and "
+            f"metal_grade from the same row can still be used if those columns "
+            f"are smelter-level."
+        )
+        silver_yield_oz = 0.0
 
     if metal == "zn":
         return SmelterParams(
