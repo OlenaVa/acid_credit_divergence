@@ -126,6 +126,8 @@ def _warn_if_large_jump(series, ticker, col, threshold=0.15):
 
 
 def main():
+    import os
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # default --out data/metal_prices.csv is relative to the repo root
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", default="2023-01-01")
     parser.add_argument("--end", default=None, help="defaults to today")

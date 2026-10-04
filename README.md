@@ -26,6 +26,8 @@ python acid_cushion_monitor.py     # runs everything; writes charts to output/ a
 
 Optional self-checks: `python copper_acid_data.py && python margin_model.py && python strategy_layer.py`
 
+Every script can be launched from any directory (it switches to the repo root itself), so the Run button in an IDE works too.
+
 SMM weekly prints have no free API: each point in `copper_acid_data.py` was transcribed by hand from a named SMM article and carries a provenance tag and note. Copper/silver prices are in `data/metal_prices.csv` (refresh script: `extras/fetch_metal_prices_yfinance.py`).
 
 ## What is in the folder
@@ -46,6 +48,6 @@ SMM weekly prints have no free API: each point in `copper_acid_data.py` was tran
 
 Not a trading strategy: no backtest, Sharpe or signal anywhere. Not a forecast of acid, TC or copper prices. Not any real smelter's P&L — the model uses benchmark index levels for a representative custom smelter with uncalibrated cost inputs; the absolute margin level should not be quoted. Regime cut-offs and falsification thresholds are declared judgment levels, not fitted.
 
-## Honest data status (3 Oct 2026)
+## Honest data status (4 Oct 2026)
 
 16 of 39 weekly grid points have both series as cited prints; every headline statistic uses cited endpoints only. EXW DRC/Zambia has not printed since 4 Sep and the sulphur series is stale since 31 Jul — both are flagged wherever used. SMM has since published a week-ending-30-Sep print (TC -231.68) that is **not yet included** — all numbers here run through the 24 Sep prints. Kamoa's Q3 figures are a management indication, not a reported result. Details: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).

@@ -1,6 +1,6 @@
 # Copper's Hidden Margin — when does acid become a binding constraint on smelter economics?
 
-*Strategy note · data through the SMM prints of 24 Sep 2026 (grid date 25 Sep) · last updated 3 Oct 2026 · companion to the article "Copper's Hidden Margin: When the Acid Cushion Starts Shrinking" (7 Sep 2026)*
+*Strategy note · data through the SMM prints of 24 Sep 2026 (grid date 25 Sep) · last updated 4 Oct 2026 · companion to the article "Copper's Hidden Margin: When the Acid Cushion Starts Shrinking" (7 Sep 2026)*
 
 Reproduce every number and chart here with `python acid_cushion_monitor.py`. Method, data inventory and limitations: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md). Nothing here is a price forecast or a trade recommendation.
 
@@ -156,6 +156,6 @@ Every print has its source article title and date in `copper_acid_data.py`; the 
 
 All technical detail is in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): provenance (cited / cited-approx / interpolated) for every weekly point, model inputs and which are uncalibrated, the full limitations list, and a code map.
 
-*Version note (3 Oct 2026).* This supersedes the 26 Sep version. Changes: attribution, counterfactual, regime map and falsification block added; the Kamoa Q1→Q2 reading corrected (see §06); one S&P Platts print removed from the SMM TC series and seven interpolated weeks replaced with SMM prints; the acid peak re-dated to 3 Jul; the monitor chart's provenance markers fixed.
+*Version note (4 Oct 2026).* This supersedes the 26 Sep version. Changes: attribution, counterfactual, regime map and falsification block added; the Kamoa Q1→Q2 reading corrected (see §06); one S&P Platts print removed from the SMM TC series and seven interpolated weeks replaced with SMM prints; the acid peak re-dated to 3 Jul; the monitor chart's provenance markers fixed.
 
 **Limitations that matter most for a reader:** (i) it is a benchmark-index model of a *representative* smelter, not any real smelter's P&L; (ii) no absolute margin level is reported — cost inputs are assumptions, and the precious-metal credit is token; (iii) 23 of 39 weekly grid points still contain an interpolated value — every headline statistic above uses cited endpoints only; (iv) the RC treatment and the inferred VAT basis change the cushion level materially; (v) Kamoa's Q3 figures are a management indication from a secondary summary of the earnings call, not a reported result; (vi) one company and one benchmark index cannot prove a market-wide mechanism.

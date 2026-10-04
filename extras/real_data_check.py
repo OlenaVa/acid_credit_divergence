@@ -122,6 +122,7 @@ acid-cushion thesis; see docs/METHODOLOGY.md):
 
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # allow `python extras/<script>.py` from the repo root
+_os.chdir(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # always work from the repo root, wherever the script is launched from
 import os
 
 import numpy as np
@@ -377,12 +378,12 @@ def main():
 
     print("\n=== Zinc smelter margin, per quarter (real inputs where available, default calibration) ===")
     sm_zn = smelter_margin(DEFAULT_ZN_PARAMS, zn["metal_price"], zn["tc"], zn["acid_price"],
-                            zn["energy_price"], silver_price=zn["silver_price"])
+                           zn["energy_price"], silver_price=zn["silver_price"])
     print(sm_zn.round(1))
 
     print("\n=== Copper smelter margin, per quarter (real inputs where available, default calibration) ===")
     sm_cu = smelter_margin(DEFAULT_CU_PARAMS, cu["metal_price"], cu["tc"], cu["acid_price"],
-                            cu["energy_price"], silver_price=cu["silver_price"])
+                           cu["energy_price"], silver_price=cu["silver_price"])
     print(sm_cu.round(1))
 
     # The bridge below still uses 2024-Q1 -> 2026-Q2, unchanged -- both

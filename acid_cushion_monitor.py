@@ -34,7 +34,6 @@ from __future__ import annotations
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 import copper_acid_data as cad
 import model_a as ma
@@ -180,15 +179,9 @@ def render_monitor_text(result: dict) -> str:
     return "\n".join(lines)
 
 
-def plot_monitor(result: dict, out_path: str = "output/copper_acid_cushion.png") -> str:
-    """Kept for backward compatibility; the implementation moved to strategy_charts.plot_monitor
-    (per-series provenance markers -- the previous version drew acid/ratio markers at the TC
-    series' cited dates)."""
-    return sc.plot_monitor(result["model_a"]["weekly"], out_path)
-
-
 if __name__ == "__main__":
     import os
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))   # outputs go to ./output wherever it is launched from
     result = build_monitor()
     print(render_monitor_text(result))
 

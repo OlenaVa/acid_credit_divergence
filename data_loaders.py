@@ -107,7 +107,7 @@ def load_worldbank_pink_sheet(path: str) -> pd.DataFrame:
     or pandas.read_excel(skiprows=...)).
     """
     _require(path, "Export & clean the World Bank Pink Sheet monthly workbook "
-                    "to columns [date, zinc_usd_t, copper_usd_t, silver_usd_toz].")
+                   "to columns [date, zinc_usd_t, copper_usd_t, silver_usd_toz].")
     df = pd.read_csv(path, parse_dates=["date"]).set_index("date").sort_index()
     expected = {"zinc_usd_t", "copper_usd_t", "silver_usd_toz"}
     missing = expected - set(df.columns)
@@ -123,7 +123,7 @@ def load_usgs_production(path: str, metal: str) -> pd.DataFrame:
     `metal` is just used to tag the output (not validated against content).
     """
     _require(path, f"Download the USGS MCS '{metal}' data release from data.usgs.gov "
-                     "and map its columns to [year, country, mine_production_kt, refined_production_kt].")
+                   "and map its columns to [year, country, mine_production_kt, refined_production_kt].")
     df = pd.read_csv(path)
     df["metal"] = metal
     return df
@@ -136,7 +136,7 @@ def load_ilzsg_free_access(path: str) -> pd.DataFrame:
         date, zinc_lme_price, zinc_shfe_price, zinc_lme_stocks
     """
     _require(path, "Export the ILZSG free-access LME/SHFE zinc stocks & price "
-                    "series to columns [date, zinc_lme_price, zinc_shfe_price, zinc_lme_stocks].")
+                   "series to columns [date, zinc_lme_price, zinc_shfe_price, zinc_lme_stocks].")
     return pd.read_csv(path, parse_dates=["date"]).set_index("date").sort_index()
 
 
@@ -148,7 +148,7 @@ def load_icsg_selected_statistics(path: str) -> pd.DataFrame:
         copper_stocks_kt
     """
     _require(path, "Transcribe ICSG's selected copper statistics tables to "
-                    "columns [date, copper_mine_production_kt, copper_refined_production_kt, copper_stocks_kt].")
+                   "columns [date, copper_mine_production_kt, copper_refined_production_kt, copper_stocks_kt].")
     return pd.read_csv(path, parse_dates=["date"]).set_index("date").sort_index()
 
 
@@ -167,8 +167,8 @@ def load_company_filing_byproducts(path: str, company: str) -> pd.DataFrame:
     / concentrate_processed_kt.
     """
     _require(path, f"Build a CSV of {company}'s disclosed by-product figures with columns "
-                    "[period, concentrate_processed_kt, sulfuric_acid_production_kt, "
-                    "sulfuric_acid_sales_kt, silver_sales_koz, tc_benchmark_usd_t, tc_spot_usd_t].")
+                   "[period, concentrate_processed_kt, sulfuric_acid_production_kt, "
+                   "sulfuric_acid_sales_kt, silver_sales_koz, tc_benchmark_usd_t, tc_spot_usd_t].")
     df = pd.read_csv(path)
     df["company"] = company
     return df
@@ -194,7 +194,7 @@ def load_regional_acid_prices(path: str) -> pd.DataFrame:
     (include whichever regions you actually have -- missing columns are fine).
     """
     _require(path, "Transcribe regional 98% smelter-grade sulfuric acid spot "
-                    "quotes into columns [date, <region_1>, <region_2>, ...].")
+                   "quotes into columns [date, <region_1>, <region_2>, ...].")
     return pd.read_csv(path, parse_dates=["date"]).set_index("date").sort_index()
 
 
@@ -224,7 +224,7 @@ def load_fred_zinc(path: str) -> pd.Series:
     IMF benchmark price, history back to 2003.
 
     Download: fred.stlouisfed.org/series/PZINCUSDM -> Download -> CSV, or
-    `python scripts/download_fred_zinc.py`. FRED exports use either
+    `python extras/download_fred_zinc.py`. FRED exports use either
     ``DATE`` (manual download) or ``observation_date`` (fredgraph.csv).
     """
     df = pd.read_csv(path)

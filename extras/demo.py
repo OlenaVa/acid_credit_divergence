@@ -40,6 +40,7 @@ glance. For real-data numbers, run real_data_check.py instead.
 
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # allow `python extras/<script>.py` from the repo root
+_os.chdir(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # always work from the repo root, wherever the script is launched from
 import os
 
 import numpy as np

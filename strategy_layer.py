@@ -59,8 +59,7 @@ CUSHION_EXHAUSTED_BELOW = 0.50   # acid absorbs less than half of it
 def fx_for(date) -> float:
     """CNY per USD used by the project's weekly pipeline for `date` (quarterly
     average table -- a known limitation: FX steps at quarter boundaries)."""
-    p = pd.Period(pd.Timestamp(date), "Q")
-    return cad.USD_CNY_QUARTERLY[f"{p.year}-Q{p.quarter}"]
+    return cad.usd_cny_for_date(date)
 
 
 def _ratio(acid_credit, drag):
@@ -459,8 +458,16 @@ REFERENCE_WINDOWS = {
     # label -> (start date, why this start)
     "since April cushion peak": ("2026-04-24", "both TC and acid are cited prints"),
     "since July acid peak": ("2026-07-03", "acid index peak (cited); TC cited"),
-    "last 4 weeks": ("2026-08-28", "both cited prints"),
+    "last 4 weeks": (None, "start = 4 grid weeks before the latest week (set in reference_windows)"),
 }
+
+
+def reference_windows(weekly: pd.DataFrame) -> dict:
+    """REFERENCE_WINDOWS with the rolling window resolved against the data, so the label
+    "last 4 weeks" stays true after the grid is extended."""
+    out = dict(REFERENCE_WINDOWS)
+    out["last 4 weeks"] = (str(weekly.index[-5].date()), out["last 4 weeks"][1])
+    return out
 
 
 def run_strategy_layer(model_a_out: dict) -> dict:
@@ -470,8 +477,9 @@ def run_strategy_layer(model_a_out: dict) -> dict:
     latest = weekly.iloc[-1]
     fx = fx_for(weekly.index[-1])
 
-    attribution = {k: attribute_ratio_change(weekly, v[0]) for k, v in REFERENCE_WINDOWS.items()}
-    margin_attr = {k: attribute_margin_change(weekly, params, v[0]) for k, v in REFERENCE_WINDOWS.items()}
+    windows = reference_windows(weekly)
+    attribution = {k: attribute_ratio_change(weekly, v[0]) for k, v in windows.items()}
+    margin_attr = {k: attribute_margin_change(weekly, params, v[0]) for k, v in windows.items()}
     cf = counterfactual_paths(weekly, params, "2026-07-03")
 
     tc_levels = [-75, -100, -125, -150, -175, -200, -225, -250, -300]
@@ -578,14 +586,14 @@ def _selfcheck_all():
     energy = out["energy_price_usd_mwh"]
 
     # (1) log decomposition is exact: acid leg + TC leg == ln(R_end/R_start)
-    for start, _ in REFERENCE_WINDOWS.values():
+    for start, _ in reference_windows(weekly).values():
         a = attribute_ratio_change(weekly, start)
         direct = float(np.log(a["ratio_end"] / a["ratio_start"]))
         assert abs(direct - a["log_change_total"]) < 1e-9, (start, direct, a["log_change_total"])
         assert abs(a["acid_share"] + a["tc_share"] - 1.0) < 1e-9
 
     # (2) margin attribution is additive (residual ~ 0)
-    for start, _ in REFERENCE_WINDOWS.values():
+    for start, _ in reference_windows(weekly).values():
         m = attribute_margin_change(weekly, params, start)
         assert abs(m["residual"]) < 1e-6, m
 
@@ -625,6 +633,25 @@ def _selfcheck_all():
     assert k["credit_change_pct"] > 0 and k["opex_change_pct"] > k["credit_change_pct"]
     assert abs(k["log_price_leg"] + k["log_volume_per_lb_leg"] - k["log_credit_leg"]) < 1e-12
     assert k["q3_coverage_mgmt_at_q2_opex"] > 1.0 > k["coverage_q2"]
+
+    # (7b) falsification rules behave as documented on synthetic frames
+    def _frame(ratios, tc_status="cited", acid_status="cited"):
+        idx = pd.date_range("2026-01-02", periods=len(ratios), freq="7D")
+        return pd.DataFrame({"acid_cushion_ratio": ratios, "tc_usd_dmt": [-100.0] * len(ratios),
+                             "tc_status": [tc_status] * len(ratios) if isinstance(tc_status, str) else tc_status,
+                             "acid_status": [acid_status] * len(ratios) if isinstance(acid_status, str) else acid_status}, index=idx)
+    byid = lambda df: {c["id"]: c for c in falsification_checks(df, params)}
+    up2 = byid(_frame([0.9, 0.8, 0.85, 0.9]))                       # two consecutive rises on cited prints
+    assert up2["C1"]["status"] == "TRIGGERED"
+    flat_interp = _frame([0.9, 0.8, 0.85, 0.9], tc_status=["cited", "cited", "interpolated (grid-fill)", "cited"])
+    assert byid(flat_interp)["C1"]["status"] != "TRIGGERED"        # a grid-fill week cannot start/stop 'erosion'
+    assert byid(_frame([0.9, 0.8]))["C1"]["status"] == "NOT TESTABLE"
+    assert byid(_frame([0.9, 0.7, 0.6, 0.55, 0.4]))["C3"]["status"].startswith("WATCHING")      # 1 week < 50%
+    assert byid(_frame([0.9, 0.45, 0.44, 0.43, 0.42]))["C3"]["status"].startswith("IN SCOPE")   # 4 weeks < 50%
+    assert byid(_frame([0.9, 0.8, 0.7, 0.6]))["C3"]["status"].startswith("NOT YET IN SCOPE")
+
+    # (7c) a date in a quarter missing from the FX table must not crash (next data refresh lands in Q4-2026)
+    assert fx_for("2026-10-02") == fx_for("2026-09-25")
 
     # (8) the whole layer runs
     s = run_strategy_layer(out)

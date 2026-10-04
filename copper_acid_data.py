@@ -481,19 +481,37 @@ USD_CNY_QUARTERLY = {
 }
 
 
-def cny_to_usd(value_cny: float, quarter_label: str) -> float:
-    """Period-matched CNY->USD conversion using USD_CNY_QUARTERLY. Pass a
-    quarter label like '2026-Q3'; falls back to the nearest quarter (by
-    calendar order) with a printed warning if the exact label isn't in the
-    table, rather than silently defaulting to a flat rate."""
+_FX_WARNED: set = set()
+
+
+def usd_cny_for_quarter(quarter_label: str) -> float:
+    """CNY per USD for a quarter label like '2026-Q3'. Falls back to the nearest
+    quarter in USD_CNY_QUARTERLY (with ONE printed warning per missing quarter)
+    rather than crashing or silently defaulting to a flat rate. Single source of
+    truth: cny_to_usd() and strategy_layer.fx_for() both use it, so the monitor and
+    the strategy layer can never disagree on the rate (they used to: the strategy
+    layer raised KeyError on any Q4-2026 date)."""
     if quarter_label in USD_CNY_QUARTERLY:
-        rate = USD_CNY_QUARTERLY[quarter_label]
-    else:
-        keys = sorted(USD_CNY_QUARTERLY)
-        target_ord = pd.Period(quarter_label, "Q").ordinal
-        nearest = min(keys, key=lambda k: abs(pd.Period(k, "Q").ordinal - target_ord))
-        rate = USD_CNY_QUARTERLY[nearest]
+        return USD_CNY_QUARTERLY[quarter_label]
+    keys = sorted(USD_CNY_QUARTERLY)
+    target_ord = pd.Period(quarter_label, "Q").ordinal
+    nearest = min(keys, key=lambda k: abs(pd.Period(k, "Q").ordinal - target_ord))
+    rate = USD_CNY_QUARTERLY[nearest]
+    if quarter_label not in _FX_WARNED:
+        _FX_WARNED.add(quarter_label)
         print(f"WARNING: no USD/CNY rate for {quarter_label}; using nearest ({nearest} = {rate}).")
+    return rate
+
+
+def usd_cny_for_date(date) -> float:
+    """usd_cny_for_quarter() keyed by an actual date."""
+    p = pd.Period(pd.Timestamp(date), "Q")
+    return usd_cny_for_quarter(f"{p.year}-Q{p.quarter}")
+
+
+def cny_to_usd(value_cny: float, quarter_label: str) -> float:
+    """Period-matched CNY->USD conversion using USD_CNY_QUARTERLY (see usd_cny_for_quarter)."""
+    rate = usd_cny_for_quarter(quarter_label)
     # Do not round here: rounding USD/t to 1 decimal leaked into the weekly acid series, so the regime map
     # (unrounded CNY/FX formula) and the monitor (rounded) disagreed at the 2e-3 level and the FX attribution
     # picked up a spurious residual. Round only at display time.

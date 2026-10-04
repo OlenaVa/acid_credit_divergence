@@ -254,7 +254,7 @@ def plot_regime_map(s: dict, weekly: pd.DataFrame, params, out_path="output/03_r
         ax.annotate(lbl, (r["acid_cny_t"], r["tc_usd_dmt"]), xytext=(dx, dy), textcoords="offset points", fontsize=8, fontweight="bold")
     last = weekly.iloc[-1]
     ax.scatter([last["acid_cny_t"]], [last["tc_usd_dmt"]], s=110, facecolor="none", edgecolor=RED, lw=2.2, zorder=5)
-    ax.annotate(f"24 Sep: cushion {last['acid_cushion_ratio']*100:.0f}%", (last["acid_cny_t"], last["tc_usd_dmt"]),
+    ax.annotate(f"{weekly.index[-1]:%d %b}: cushion {last['acid_cushion_ratio']*100:.0f}%", (last["acid_cny_t"], last["tc_usd_dmt"]),
                 xytext=(16, -22), textcoords="offset points", fontsize=8.5, fontweight="bold", color=RED, ha="left")
     ax.set_xlim(880, 2120)
     ax.set_ylim(-260, -35)
