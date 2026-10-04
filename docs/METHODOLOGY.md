@@ -58,11 +58,11 @@ Series definitions the model does **not** know: freight, handling, storage, the 
 
 ## 5. Definition sensitivity (why the level is fragile)
 
-- **Refining charge.** SMM states the convention that RC is 10% of TC (RC in cents/lb = TC in $/dmt ÷ 10). On a 25.5% concentrate with 96% payable, that adds ≈$121/dmt of drag at TC -$224.53 (≈54% on top of TC). It is a **convention, not an observed series**, so it is used only as a sensitivity.
+- **Refining charge.** SMM states the convention that RC is 10% of TC (RC in cents/lb = TC in $/dmt ÷ 10). On a 25.5% concentrate with 96% payable, that adds ≈$125/dmt of drag at TC -$231.68 (≈54% on top of TC). It is a **convention, not an observed series**, so it is used only as a sensitivity.
 - **VAT.** Checked on SMM's price pages (2 Oct 2026): the *original RMB* price includes 13% VAT and the USD series deducts it — e.g. Inner Mongolia EXW: CNY 785/t = USD 111.19 VAT-included = USD 98.40 VAT-excluded; the national index's USD page (SMM-CU-SA-001) states "13% VAT deducted for USD pricing". The national index's RMB page itself was not retrieved, so a VAT-inclusive RMB quote is **inferred from that convention**. The headline therefore deducts VAT (÷1.13); the as-quoted figure is shown as a sensitivity.
 - **Acid yield.** ±7.5% around 0.83.
 
-Result at the latest print: 60% (headline: TC only, VAT deducted) → 68% (as quoted) → 39% (TC + RC, VAT deducted) → 44% (TC + RC, as quoted); full range 36%–73% including yield. The date the cushion drops below 100% for good ranges from 26 Jun (TC + RC, VAT deducted) to 28 Aug (TC only, as quoted); the headline definition: 21 Aug.
+Result at the latest print: 57% (headline: TC only, VAT deducted) → 65% (as quoted) → 37% (TC + RC, VAT deducted) → 42% (TC + RC, as quoted); full range 34%–69% including yield. The date the cushion drops below 100% for good ranges from 26 Jun (TC + RC, VAT deducted) to 28 Aug (TC only, as quoted); the headline definition: 21 Aug.
 
 ## 6. Kamoa-Kakula
 

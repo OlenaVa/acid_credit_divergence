@@ -141,6 +141,20 @@ CU_TC_WEEKLY_RAW = [
      "all is itself new information: it signals the smelter side and "
      "miners/traders could not agree on a floor, not that -$224.53 is "
      "necessarily durable. Link: https://news.metal.com/newscontent/104133941-cspt-meeting-decides-not-to-set-q4-copper-concentrate-tc-guidance-price-imported-copper-concentrate-trading-activity-declines-smm-copper-concentrate-spot-weekly-review"),
+    ("2026-09-30", -231.68, "cited",
+     "SMM Imported Copper Concentrate Index (weekly), -$231.68/dmt, down "
+     "$7.15/dmt from -$224.53/dmt 'in the previous period' -- another new "
+     "record low (news.metal.com, 'Chile Mine Labor Risks Heat Up, "
+     "Imported Copper Concentrate TCs Continue to Fall' -- SMM Copper "
+     "Concentrate Spot Weekly Review, 2026-09-30). Added 2026-10-04. "
+     "Dated as SMM reports it: a Wednesday, again off the usual Friday "
+     "cycle, plausibly to clear the desk ahead of China's Oct National "
+     "Day holiday. Falls 5 days after the 2026-09-25 grid Friday and 2 "
+     "days before 2026-10-02; under `_interpolate_to_grid()`'s "
+     "backward-only merge_asof (3-day tolerance), this citation is NOT "
+     "within reach of 2026-09-25 (it postdates that Friday) and so "
+     "cannot overwrite it -- it snaps FORWARD onto the 2026-10-02 grid "
+     "Friday. Link: https://news.metal.com/newscontent/104142380-chile-mine-labor-risks-heat-up-imported-copper-concentrate-tcs-continue-to-fall-smm-copper-concentrate-spot-weekly-review"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -232,6 +246,17 @@ CU_ACID_WEEKLY_RAW = [
      "grid-charted exactly as the 2026-09-24 TC print above -- see that "
      "row's note. Added 2026-09-25; most recent print as of this "
      "project's current data-extension pass. Link: https://news.metal.com/newscontent/104133833-waiting-for-policies-and-winter-stockpiling-the-sub-thousand-wave-spreads-to-central-china-smm-sulphuric-acid-weekly-review"),
+    ("2026-09-30", 1218.5, "cited",
+     "SMM China Copper Smelting Acid Index, RMB 1,218.5/t, down RMB "
+     "29/t or 2.3% from RMB 1,247.5/t the previous Friday -- the "
+     "THIRTEENTH consecutive weekly decline since 10 July, but a sharp "
+     "narrowing from the prior week's 7.7% drop (news.metal.com, "
+     "'Pre-holiday Fluctuations Converge, Price Center Shifts to "
+     "October', SMM Sulphuric Acid Weekly Review, 2026-09-30). Added "
+     "2026-10-04; most recent print as of this pass. Dated and "
+     "grid-charted exactly as the 2026-09-30 TC print above -- see that "
+     "row's note on the Wednesday publish date and the forward snap to "
+     "the 2026-10-02 grid Friday. Link: https://news.metal.com/newscontent/104142096-pre-holiday-fluctuations-converge-price-center-shifts-to-october-smm-sulphuric-acid-weekly-review"),
 ]
 
 
@@ -907,16 +932,16 @@ if __name__ == "__main__":
     _selfcheck_vintage_alignment_model_b()
     _tc_grid = cu_tc_weekly_interpolated()
     _acid_grid = cu_acid_weekly_interpolated()
-    assert _tc_grid.index.max() == pd.Timestamp("2026-09-25"), (
+    assert _tc_grid.index.max() == pd.Timestamp("2026-10-02"), (
         f"TC grid's last date is {_tc_grid.index.max()}, expected "
-        f"2026-09-25 (the Friday nearest the 2026-09-24 cited print)")
-    assert _acid_grid.index.max() == pd.Timestamp("2026-09-25"), (
+        f"2026-10-02 (the Friday nearest the 2026-09-30 cited print)")
+    assert _acid_grid.index.max() == pd.Timestamp("2026-10-02"), (
         f"acid grid's last date is {_acid_grid.index.max()}, expected "
-        f"2026-09-25")
-    assert abs(_tc_grid["tc_usd_dmt"].iloc[-1] - (-224.53)) < 1e-6, (
-        "TC grid's last value does not match the 2026-09-24 cited print")
-    assert abs(_acid_grid["acid_cny_t"].iloc[-1] - 1247.5) < 1e-6, (
-        "acid grid's last value does not match the 2026-09-24 cited print")
+        f"2026-10-02")
+    assert abs(_tc_grid["tc_usd_dmt"].iloc[-1] - (-231.68)) < 1e-6, (
+        "TC grid's last value does not match the 2026-09-30 cited print")
+    assert abs(_acid_grid["acid_cny_t"].iloc[-1] - 1218.5) < 1e-6, (
+        "acid grid's last value does not match the 2026-09-30 cited print")
     print("copper_acid_data.py self-checks passed:")
     print(f"  TC grid runs through   {_tc_grid.index.max().date()}  "
           f"(latest: {_tc_grid['tc_usd_dmt'].iloc[-1]:.2f} USD/dmt, "

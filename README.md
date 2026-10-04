@@ -8,10 +8,10 @@ Built on public weekly SMM data (copper TC, China acid, regional acid benchmarks
 
 ## The result in four lines
 
-- Acid credit / \|TC\| for a representative Chinese custom smelter fell from **152% (3 Jul) to 60% (24 Sep)**, with TC at a record -$224.53/dmt and China's acid index down 12 weeks running.
-- The fall was **TC-led** from April (79% TC / 21% acid) and became **acid-led** only in the last four weeks (67% acid / 33% TC).
-- It is a **regional divergence, not a global shrinking cushion**: ex-China acid (EXW DRC ~$935/t) is ~4.6x China-domestic ex-VAT, and Kamoa-Kakula's coverage is indicated to *widen* in Q3. Kamoa's Q1→Q2 dip is not an acid-price effect (realised price flat at $467 → $465/t; Q1 opex was partly capitalised).
-- The **level** of the cushion is definition-sensitive (36%–73% across acid yield, refining-charge and VAT basis); the **direction** is not.
+- Acid credit / \|TC\| for a representative Chinese custom smelter fell from **152% (3 Jul) to 57% (30 Sep)**, with TC at a record -$231.68/dmt and China's acid index down 13 weeks running (though the latest weekly decline narrowed to -2.3% from -7.7%).
+- The fall was **TC-led** from April (78% TC / 22% acid) and became **acid-led** in the last four weeks (62% acid / 38% TC).
+- It is a **regional divergence, not a global shrinking cushion**: ex-China acid (EXW DRC ~$935/t, 4 Sep -- stale, flat 5+ weeks before that) is ~4.6x China-domestic ex-VAT, and Kamoa-Kakula's coverage is indicated to *widen* in Q3 (mgmt: 146%-172% vs Q2's 95%). Kamoa's Q1→Q2 dip is not an acid-price effect (realised price flat at $467 → $465/t; Q1 opex was partly capitalised).
+- The **level** of the cushion is definition-sensitive (34%–69% across acid yield, refining-charge and VAT basis); the **direction** is not.
 
 | | |
 |---|---|

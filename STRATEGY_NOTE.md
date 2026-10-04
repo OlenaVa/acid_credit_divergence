@@ -14,9 +14,9 @@ Reproduce every number and chart here with `python acid_cushion_monitor.py`. Met
 
 | | Evidence (all cited unless marked) |
 |---|---|
-| **China-domestic custom smelters are losing their cushion.** | Acid credit / \|TC\| fell from 219% (24 Apr) and 152% (3 Jul) to **60%** (24 Sep). It dropped below 100% on 21 Aug on the headline (ex-VAT) basis — anywhere from 26 Jun to 28 Aug depending on how RC and VAT are treated. TC is at a record **-$224.53/dmt**; the China acid index has fallen 12 weeks running to RMB 1,247.5/t (-30% from its 3 Jul peak). |
+| **China-domestic custom smelters are losing their cushion.** | Acid credit / \|TC\| fell from 219% (24 Apr) and 152% (3 Jul) to **57%** (30 Sep). It dropped below 100% on 21 Aug on the headline (ex-VAT) basis — anywhere from 26 Jun to 28 Aug depending on how RC and VAT are treated. TC is at a record **-$231.68/dmt**; the China acid index has fallen 13 weeks running to RMB 1,218.5/t (-32% from its 3 Jul peak), though the latest weekly decline narrowed sharply (-2.3% vs -7.7% the week before). |
 | **Ex-China integrated producers are gaining one.** | EXW DRC acid ~$935/t and Zambia ~$400/t vs ~$202/t China-domestic ex-VAT on the same date (DRC ≈ 4.6x China). Kamoa-Kakula's acid price rose from $465/t (Q2 realised) to ~$840/t (Jul/Aug contracts); management indicates the acid credit rises from $0.39/lb to ~$0.60/lb in Q3 (earnings-call summary, not a reported result). |
-| **The driver changed during the summer.** | The cushion's fall since April is **79% TC / 21% acid**. Over the last four weeks it is **67% acid / 33% TC**. The article's claim that the acid offset is now "actively widening its own decline" holds — but only for the last month. |
+| **The driver changed during the summer.** | The cushion's fall since April is **78% TC / 22% acid**. Over the last four weeks it is **62% acid / 38% TC**. The article's claim that the acid offset is now "actively widening its own decline" holds — but only for the last month. |
 | **It is not yet a confirmed physical constraint.** | SMM reports production-cut *intentions emerging* (18 Sep) and CSPT set no Q4 TC guidance (24 Sep). No named smelter has announced a dated curtailment attributed to acid. |
 
 ---
