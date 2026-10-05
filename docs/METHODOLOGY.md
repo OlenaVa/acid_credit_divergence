@@ -34,10 +34,10 @@ Every weekly point in `copper_acid_data.py` is tagged **cited** (a dated print i
 
 | Series | Source | Cadence | Latest | Status |
 |---|---|---|---|---|
-| Copper TC (Imported Copper Concentrate Index) | SMM | weekly | 24 Sep 2026 | 20 of 39 grid weeks cited / cited-approx |
-| China copper-smelter acid index | SMM | weekly | 24 Sep 2026 | 18 of 39 grid weeks cited / cited-approx |
-| Both series cited on the same week | — | — | — | 16 of 39 |
-| Copper, silver price | yfinance | daily | 25 Sep 2026 | observed |
+| Copper TC (Imported Copper Concentrate Index) | SMM | weekly | 30 Sep 2026 | 21 of 40 grid weeks cited / cited-approx |
+| China copper-smelter acid index | SMM | weekly | 30 Sep 2026 | 19 of 40 grid weeks cited / cited-approx |
+| Both series cited on the same week | — | — | — | 16 of 40 |
+| Copper, silver price | yfinance | daily | 2 Oct 2026 | observed |
 | EXW DRC / EXW Zambia acid | SMM (launched 5 Jun 2026) | weekly | 4 Sep 2026 | observed; flat 5+ weeks — stable or thin, undetermined. **Stale.** |
 | Sulphur EXW Shandong | SMM weekly reviews | weekly | 31 Jul 2026 | two cited points only. **Stale.** |
 | Kamoa-Kakula quarterly disclosure | Ivanhoe Mines releases (Q1: 6 May; Q2: 29 Jul) | quarterly | Q2 2026 | checked against the releases. Q3 forward figure ($0.60/lb) is a management indication from a secondary summary of the 30 Jul call. |
@@ -71,11 +71,11 @@ Disclosed per lb of payable copper on an integrated mine+smelter basis; **never 
 ## 7. Known limitations
 
 1. **Benchmark model of a representative smelter**, not any real smelter's economics.
-2. **Interpolated weeks** — 23 of 39 grid weeks still have at least one interpolated series (mostly Jan–Jun). Charts mark cited prints separately from the line; statistics use cited endpoints.
+2. **Interpolated weeks** — 24 of 40 grid weeks still have at least one interpolated or cited-approx series (mostly Jan–Jun). Charts mark cited prints separately from the line; statistics use cited endpoints.
 3. **Uncalibrated costs; token precious-metal credit** (§4).
 4. **RC and the inferred VAT basis** change the level materially (§5).
 5. **FX** uses quarterly averages.
-6. **Regional benchmark** is young (launched 5 Jun) and stale since 4 Sep; DRC/Zambia are inland leach markets, not an arbitrage leg for a Chinese producer. The China–ex-China comparison is dated 4 Sep on both sides.
+6. **Regional benchmark** is young (launched 5 Jun) and stale since 4 Sep; DRC/Zambia are inland leach markets, not an arbitrage leg for a Chinese producer. The published 4.6x (DRC vs China) and ~3x (DRC vs Asia FOB/CFR) comparisons are both same-date, 4 Sep on every side — deliberately not paired with the later (30 Sep) China print, which would require mixing dates to produce a headline spread (~5.8x) this project does not publish.
 7. **Kamoa** is one company; Q3 is a management indication, not a result.
 8. **Physical response is unconfirmed**; cuts may reflect concentrate scarcity rather than acid.
 9. **No backtest, no statistical test.** The strategy layer is descriptive and makes the thesis falsifiable; it does not estimate a relationship. Thresholds and regime bands are judgment.
