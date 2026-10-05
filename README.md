@@ -10,7 +10,7 @@ Built on public weekly SMM data (copper TC, China acid, regional acid benchmarks
 
 - Acid credit / \|TC\| for a representative Chinese custom smelter fell from **152% (3 Jul) to 57% (30 Sep)**, with TC at a record -$231.68/dmt and China's acid index down 13 weeks running (though the latest weekly decline narrowed to -2.3% from -7.7%).
 - The fall was **TC-led** from April (78% TC / 22% acid) and became **acid-led** in the last four weeks (62% acid / 38% TC).
-- It is a **regional divergence, not a global shrinking cushion**: ex-China acid (EXW DRC ~$935/t, 4 Sep -- stale, flat 5+ weeks before that) is ~4.6x China-domestic ex-VAT, and Kamoa-Kakula's coverage is indicated to *widen* in Q3 (mgmt: 146%-172% vs Q2's 95%). Kamoa's Q1→Q2 dip is not an acid-price effect (realised price flat at $467 → $465/t; Q1 opex was partly capitalised).
+- It is a **regional divergence, not a global shrinking cushion**: ex-China acid (EXW DRC ~$935/t, 4 Sep -- stale, flat 5+ weeks before that) is ~5.8x the 30-Sep China-domestic ex-VAT price (mixed-date; same-day Asia FOB/CFR ~$300-315/t is the cleaner comparator, at ~1.9x), and Kamoa-Kakula's coverage is indicated to *widen* in Q3 (mgmt: 146%-172% vs Q2's 95%). Kamoa's Q1→Q2 dip is not an acid-price effect (realised price flat at $467 → $465/t; Q1 opex was partly capitalised).
 - The **level** of the cushion is definition-sensitive (34%–69% across acid yield, refining-charge and VAT basis); the **direction** is not.
 
 | | |
@@ -50,4 +50,4 @@ Not a trading strategy: no backtest, Sharpe or signal anywhere. Not a forecast o
 
 ## Honest data status (4 Oct 2026)
 
-16 of 39 weekly grid points have both series as cited prints; every headline statistic uses cited endpoints only. EXW DRC/Zambia has not printed since 4 Sep and the sulphur series is stale since 31 Jul — both are flagged wherever used. SMM has since published a week-ending-30-Sep print (TC -231.68) that is **not yet included** — all numbers here run through the 24 Sep prints. Kamoa's Q3 figures are a management indication, not a reported result. Details: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).
+16 of 40 weekly grid points have both series as cited prints; every headline statistic uses cited endpoints only. All numbers here run through the week-ending-30-Sep print (TC -$231.68/dmt, acid RMB 1,218.5/t), added 4 Oct. EXW DRC/Zambia has not printed since 4 Sep and the sulphur series is stale since 31 Jul — both are flagged wherever used; the ~4.6x / ~5.8x China-vs-DRC comparisons in this README therefore mix a 4-Sep DRC print with later China prints, which is why the same-day Asia FOB/CFR comparator (~1.9x) is the cleaner read. Kamoa's Q3 figures are a management indication, not a reported result. Details: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).

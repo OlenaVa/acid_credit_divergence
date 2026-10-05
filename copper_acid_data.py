@@ -32,9 +32,14 @@ tested.
 Sources checked 2026-09-16; TC and acid weekly series, physical-response
 evidence, and the fertiliser/acid-export-policy note extended 2026-09-25
 with three additional real, cited weekly prints (2026-09-11, 09-18, 09-24)
-plus two new physical-response citations -- see the earlier README's changelog for
-the full list of what changed in that pass. Full citation list at the
-bottom of each constant's definition.
+plus two new physical-response citations. Extended again 2026-10-04 with
+the week-ending-2026-09-30 TC (-$231.68/dmt, a new record low) and China
+acid (RMB 1,218.5/t, 13th consecutive weekly decline, narrowing to -2.3%
+from -7.7% the week before) prints -- both cited, grid-dated 2026-10-02
+(see that entry's note on the off-cycle Wednesday publish date and the
+forward snap under `_interpolate_to_grid()`). See the earlier README's
+changelog for the full list of what changed in each pass. Full citation
+list at the bottom of each constant's definition.
 """
 
 from __future__ import annotations
